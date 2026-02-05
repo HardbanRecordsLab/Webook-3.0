@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -12,32 +12,7 @@ export default function PaymentSuccess() {
   const [projectId, setProjectId] = useState(null);
   const hasPolled = useRef(false);
 
-  useEffect(() => {
-    if (hasPolled.current) return;
-    hasPolled.current = true;
-
-    const sessionId = searchParams.get('session_id');
-    const method = searchParams.get('method');
-    const paypalToken = searchParams.get('token');
-    
-    // Handle PayPal return
-    if (method === 'paypal' && paypalToken) {
-      handlePaypalCapture(paypalToken);
-      return;
-    }
-    
-    // Handle P24 return (session_id already included)
-    if (method === 'p24' && sessionId) {
-      pollPaymentStatus(sessionId);
-      return;
-    }
-    
-    // Handle Stripe return
-    if (!sessionId) { setStatus('failed'); return; }
-    pollPaymentStatus(sessionId);
-  }, [searchParams]);
-
-  const handlePaypalCapture = async (token) => {
+  const handlePaypalCapture = useCallback(async (token) => {
     try {
       const res = await capturePaypalPayment(token);
       if (res.data.status === 'COMPLETED') {
@@ -51,9 +26,9 @@ export default function PaymentSuccess() {
     } catch (error) {
       setStatus('failed');
     }
-  };
+  }, []);
 
-  const pollPaymentStatus = async (sessionId, attempts = 0) => {
+  const pollPaymentStatus = useCallback(async (sessionId, attempts = 0) => {
     if (attempts >= 5) { setStatus('failed'); return; }
     try {
       const res = await getPaymentStatus(sessionId);
@@ -67,7 +42,32 @@ export default function PaymentSuccess() {
     } catch (error) {
       setStatus('failed');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (hasPolled.current) return;
+    hasPolled.current = true;
+
+    const sessionId = searchParams.get('session_id');
+    const method = searchParams.get('method');
+    const paypalToken = searchParams.get('token');
+
+    // Handle PayPal return
+    if (method === 'paypal' && paypalToken) {
+      handlePaypalCapture(paypalToken);
+      return;
+    }
+
+    // Handle P24 return (session_id already included)
+    if (method === 'p24' && sessionId) {
+      pollPaymentStatus(sessionId);
+      return;
+    }
+
+    // Handle Stripe return
+    if (!sessionId) { setStatus('failed'); return; }
+    pollPaymentStatus(sessionId);
+  }, [searchParams, handlePaypalCapture, pollPaymentStatus]);
 
   const deployOptions = [
     { name: 'Download HTML', desc: 'Self-host anywhere', icon: <Download className="w-5 h-5" />, action: () => navigate(`/builder/${projectId}`) },
@@ -79,10 +79,10 @@ export default function PaymentSuccess() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="fixed inset-0 animated-gradient opacity-30 pointer-events-none" />
-      
+
       <Card className="relative max-w-md w-full premium-card rounded-3xl overflow-hidden">
         {status === 'success' && <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-pink-500" />}
-        
+
         <CardHeader className="text-center pt-10 pb-4">
           {status === 'checking' && (
             <>
@@ -92,7 +92,7 @@ export default function PaymentSuccess() {
               <CardTitle className="text-2xl font-heading">Verifying payment...</CardTitle>
             </>
           )}
-          
+
           {status === 'success' && (
             <>
               <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg">
@@ -101,7 +101,7 @@ export default function PaymentSuccess() {
               <CardTitle className="text-2xl font-heading gradient-text">Payment Successful!</CardTitle>
             </>
           )}
-          
+
           {status === 'failed' && (
             <>
               <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg">
@@ -111,12 +111,12 @@ export default function PaymentSuccess() {
             </>
           )}
         </CardHeader>
-        
+
         <CardContent className="text-center pb-10 space-y-6">
           {status === 'success' && (
             <>
               <p className="text-muted-foreground">Your webbook is ready to publish! Choose a deployment option:</p>
-              
+
               <div className="space-y-3">
                 {deployOptions.map((opt, i) => (
                   <Button key={i} variant="outline" className="w-full justify-start rounded-xl h-14 hover:bg-accent" onClick={opt.action}>
@@ -128,13 +128,13 @@ export default function PaymentSuccess() {
                   </Button>
                 ))}
               </div>
-              
+
               <Button onClick={() => navigate(`/builder/${projectId}`)} className="w-full btn-shine rounded-full mt-4" size="lg">
                 Go to Project
               </Button>
             </>
           )}
-          
+
           {status === 'failed' && (
             <>
               <p className="text-muted-foreground">Something went wrong with your payment. Please try again or contact support.</p>

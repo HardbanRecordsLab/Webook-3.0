@@ -1,0 +1,190 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.App-link {
+  color: hsl(var(--primary));
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Quill editor custom styles */
+.ql-container {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1rem;
+}
+
+.ql-editor {
+  min-height: 400px;
+  line-height: 1.8;
+}
+
+.ql-editor h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.ql-editor h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.ql-editor h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.ql-editor p {
+  margin-bottom: 1rem;
+}
+
+.ql-editor blockquote {
+  border-left: 4px solid hsl(var(--primary));
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+
+.ql-editor img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+.ql-editor a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+}
+
+.ql-toolbar.ql-snow {
+  border-color: hsl(var(--border));
+  background: hsl(var(--muted));
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.ql-container.ql-snow {
+  border-color: hsl(var(--border));
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+/* Dark mode for Quill */
+.dark .ql-toolbar.ql-snow {
+  background: hsl(var(--secondary));
+}
+
+.dark .ql-container.ql-snow {
+  background: hsl(var(--card));
+}
+
+.dark .ql-editor {
+  color: hsl(var(--foreground));
+}
+
+.dark .ql-toolbar .ql-stroke {
+  stroke: hsl(var(--foreground));
+}
+
+.dark .ql-toolbar .ql-fill {
+  fill: hsl(var(--foreground));
+}
+
+.dark .ql-toolbar .ql-picker {
+  color: hsl(var(--foreground));
+}
+
+.dark .ql-toolbar .ql-picker-options {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+}
+
+/* Prose styles for webbook content */
+.prose {
+  max-width: 65ch;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.prose p {
+  margin-bottom: 1.5rem;
+  line-height: 1.8;
+}
+
+.prose ul, .prose ol {
+  margin-bottom: 1.5rem;
+}
+
+.prose li {
+  margin-bottom: 0.5rem;
+}
+
+.prose blockquote {
+  border-left: 4px solid hsl(var(--primary));
+  padding-left: 1.5rem;
+  margin: 2rem 0;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+}
+
+.prose img {
+  border-radius: 0.75rem;
+  margin: 2rem 0;
+}
+
+.prose a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose a:hover {
+  text-decoration: none;
+}
+
+/* Line clamp utility */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

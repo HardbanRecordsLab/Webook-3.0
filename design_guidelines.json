@@ -1,0 +1,180 @@
+{
+  "identity": {
+    "name": "E1 - The Anti-AI Designer",
+    "mission": "Create a unique, editorial-grade interface for Webbook Generator 3.0 that breaks the 'SaaS Blue' mold.",
+    "principles": [
+      "Fusion over Imitation: Mix Editorial Print design with Digital Workbench utility.",
+      "Emotion First: The Builder should feel 'Capable & Calm', the Webbook should feel 'Immersive & Personal'.",
+      "Content is King: The interface recedes; the user's content takes center stage.",
+      "Zoom In: Use bold focus on active elements.",
+      "Negative Space: Generous padding to prevent cognitive overload."
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "headings": {
+        "family": "Fraunces, serif",
+        "weights": ["300", "600", "700"],
+        "usage": "Landing Page Headlines, Webbook Chapter Titles, Modal Headers",
+        "fallback": "serif"
+      },
+      "body": {
+        "family": "Manrope, sans-serif",
+        "weights": ["400", "500", "600"],
+        "usage": "Dashboard UI, Builder Controls, General Text",
+        "fallback": "sans-serif"
+      },
+      "mono": {
+        "family": "JetBrains Mono, monospace",
+        "weights": ["400"],
+        "usage": "Code snippets, Technical metadata, IDs",
+        "fallback": "monospace"
+      }
+    },
+    "scale": {
+      "h1": "text-4xl md:text-6xl font-bold tracking-tight leading-tight",
+      "h2": "text-3xl md:text-4xl font-semibold tracking-tight",
+      "h3": "text-2xl font-medium tracking-normal",
+      "body_lg": "text-lg leading-relaxed",
+      "body_base": "text-base leading-relaxed",
+      "caption": "text-sm text-muted-foreground tracking-wide uppercase"
+    },
+    "instructions": "Import fonts via Google Fonts in index.css. Ensure 'Latin Extended' subset is selected for Polish language support."
+  },
+  "colors": {
+    "palettes": {
+      "dashboard_theme": {
+        "name": "Soft Utility (Archetype 4 Variant)",
+        "description": "Clean, focus-oriented, avoiding clinical white.",
+        "colors": {
+          "background": "#F9FAFB",
+          "foreground": "#18181B",
+          "card": "#FFFFFF",
+          "card_foreground": "#18181B",
+          "primary": "#14532D",
+          "primary_foreground": "#FFFFFF",
+          "secondary": "#F4F4F5",
+          "secondary_foreground": "#18181B",
+          "muted": "#F4F4F5",
+          "muted_foreground": "#71717A",
+          "accent": "#ECFDF5",
+          "accent_foreground": "#064E3B",
+          "destructive": "#EF4444",
+          "destructive_foreground": "#FFFFFF",
+          "border": "#E4E4E7",
+          "input": "#E4E4E7",
+          "ring": "#14532D"
+        }
+      },
+      "webbook_default_theme": {
+        "name": "Organic & Earthy (Archetype 1)",
+        "description": "Calming, readable, professional. Ideal for therapists.",
+        "colors": {
+          "background": "#FDFCF8",
+          "foreground": "#2C2C2C",
+          "primary": "#3F4E4F",
+          "secondary": "#E6E2DD",
+          "accent": "#A27B5C"
+        }
+      }
+    },
+    "usage_rules": [
+      "NEVER use generic 'Blue-600' for primary actions. Use the defined 'Forest Green' (#14532D) or 'Charcoal' (#18181B).",
+      "Avoid pure black (#000000). Use #18181B or #0A0A0A.",
+      "Use 'muted' backgrounds for sidebars and secondary panels to create depth.",
+      "Gradients: Use subtle, noise-textured gradients only. No linear 2-color gradients."
+    ]
+  },
+  "layout": {
+    "spacing": {
+      "container_padding": "p-6 md:p-12",
+      "section_gap": "gap-8 md:gap-16",
+      "component_gap": "gap-4"
+    },
+    "grids": {
+      "dashboard": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6",
+      "landing_hero": "grid grid-cols-1 md:grid-cols-12 gap-8 items-center",
+      "webbook_content": "max-w-3xl mx-auto px-6 py-12"
+    },
+    "strategies": [
+      "Dashboard: Use 'Bento Grid' (Mode B). Dense data, tight gaps (gap-4).",
+      "Landing Page: Use 'Tetris Grid' (Mode A). Asymmetrical, overlapping elements.",
+      "Builder: 3-Pane Layout. Fixed Sidebar (Left), Scrollable Canvas (Center), Collapsible Inspector (Right)."
+    ]
+  },
+  "components": {
+    "buttons": {
+      "style": "rounded-md font-medium transition-all duration-200 active:scale-95",
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+      "ghost": "hover:bg-accent hover:text-accent-foreground",
+      "outline": "border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+    },
+    "cards": {
+      "style": "bg-card text-card-foreground rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow duration-200",
+      "dashboard_widget": "p-6 flex flex-col justify-between h-full"
+    },
+    "inputs": {
+      "style": "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    },
+    "navigation": {
+      "sidebar": "w-64 bg-muted/30 border-r border-border h-screen sticky top-0 p-4 flex flex-col gap-2",
+      "topbar": "h-16 border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50 px-6 flex items-center justify-between"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "backdrop-blur-xl bg-white/70 border border-white/20 shadow-sm",
+    "noise_texture": "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E\")",
+    "shadows": {
+      "soft": "0 2px 10px rgba(0,0,0,0.03)",
+      "medium": "0 4px 20px rgba(0,0,0,0.06)",
+      "hard": "4px 4px 0px rgba(0,0,0,1)"
+    }
+  },
+  "media": {
+    "image_urls": {
+      "landing_hero": "https://images.unsplash.com/photo-1760720962365-6ae03435c02a?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "feature_writing": "https://images.unsplash.com/photo-1760720962347-d4fd5dc79934?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "feature_organization": "https://images.unsplash.com/photo-1763529896738-9eafa27c1324?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "template_cover_abstract": "https://images.pexels.com/photos/32141322/pexels-photo-32141322.jpeg",
+      "template_cover_nature": "https://images.pexels.com/photos/33145088/pexels-photo-33145088.jpeg"
+    },
+    "icons": "Use 'lucide-react' for all UI icons. Use 'phosphor-icons' (Duotone) for Feature highlights if available."
+  },
+  "accessibility": {
+    "rules": [
+      "Ensure 4.5:1 contrast ratio for normal text.",
+      "Interactive elements must have :focus-visible states.",
+      "Use semantic HTML (main, nav, aside, article).",
+      "All images must have alt text.",
+      "Support 'prefers-reduced-motion'."
+    ]
+  },
+  "instructions_to_main_agent": {
+    "setup": [
+      "Install fonts: 'Fraunces' and 'Manrope' via Google Fonts.",
+      "Update 'tailwind.config.js' with the custom colors and font families.",
+      "Create a 'Layout' component that handles the Sidebar/Topbar structure for the Dashboard.",
+      "Ensure the 'Webbook' output is a standalone HTML file (or minimal React build) that doesn't require the backend."
+    ],
+    "implementation_order": [
+      "1. Setup Global Styles (Fonts, Colors, Reset).",
+      "2. Build Core Layouts (Dashboard Shell, Auth Layout).",
+      "3. Implement Dashboard Widgets (Projects, Stats).",
+      "4. Build the 'Webbook Builder' Interface (Complex State).",
+      "5. Create the 'Webbook Renderer' (The output view)."
+    ],
+    "testing": [
+      "Add 'data-testid' to all buttons, inputs, and links.",
+      "Verify contrast in Light and Dark modes."
+    ]
+  },
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Avoid 'AI Slop': No generic gradients, no centered text blocks without purpose.",
+    "Micro-interactions: Add 'active:scale-95' to buttons. Add hover states to cards.",
+    "Spacing: Use 'p-8' or 'p-12' for section padding. Don't cram content.",
+    "Glassmorphism: Use the defined 'glassmorphism' class for sticky headers and modals.",
+    "Toast: Use 'sonner' for notifications.",
+    "Export: Use named exports for components, default exports for pages."
+  ]
+}

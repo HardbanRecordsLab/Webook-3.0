@@ -7,6 +7,7 @@ import LessonEditor from '@/components/webbook/LessonEditor';
 import WebbookPreview from '@/components/webbook/WebbookPreview';
 import SettingsPanel from '@/components/webbook/SettingsPanel';
 import IntroPagesEditor from '@/components/webbook/IntroPagesEditor';
+import ToolsPanel from '@/components/webbook/ToolsPanel';
 import { BookOpen } from 'lucide-react';
 
 const Index = () => {
@@ -16,6 +17,7 @@ const Index = () => {
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showIntroPages, setShowIntroPages] = useState(false);
+  const [showTools, setShowTools] = useState(false);
 
   const handleStart = useCallback((wb: Webbook) => {
     setWebbook(wb);
@@ -83,6 +85,7 @@ const Index = () => {
             onUpdateWebbook={setWebbook}
             onOpenSettings={() => setShowSettings(true)}
             onOpenIntroPages={() => { setShowIntroPages(true); setSelectedLessonId(null); }}
+            onOpenTools={() => setShowTools(true)}
           />
           <div className="flex-1 flex flex-col overflow-hidden">
             {showIntroPages && webbook.introPages ? (
@@ -106,6 +109,9 @@ const Index = () => {
         </div>
         {showSettings && (
           <SettingsPanel webbook={webbook} onUpdate={setWebbook} onClose={() => setShowSettings(false)} />
+        )}
+        {showTools && (
+          <ToolsPanel webbook={webbook} currentLesson={currentLesson || null} onClose={() => setShowTools(false)} />
         )}
       </div>
     );

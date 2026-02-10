@@ -1,4 +1,4 @@
-import { Plus, Trash2, ChevronRight, Book, Settings, FileText } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, Book, Settings, FileText, Wrench } from 'lucide-react';
 import { Webbook, createModule, createLesson } from '@/types/webbook';
 import { useState } from 'react';
 
@@ -10,6 +10,7 @@ interface BuilderSidebarProps {
   onUpdateWebbook: (webbook: Webbook) => void;
   onOpenSettings: () => void;
   onOpenIntroPages: () => void;
+  onOpenTools?: () => void;
 }
 
 const BuilderSidebar = ({
@@ -131,6 +132,11 @@ const BuilderSidebar = ({
         <button onClick={onOpenSettings} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors">
           <Settings className="w-4 h-4" /> Ustawienia
         </button>
+        {typeof onOpenTools === 'function' && (
+          <button onClick={onOpenTools} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors">
+            <Wrench className="w-4 h-4" /> Narzędzia
+          </button>
+        )}
       </div>
     </aside>
   );

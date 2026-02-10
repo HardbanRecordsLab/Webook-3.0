@@ -5,12 +5,12 @@
   "type": "module",
   "workspaces": [
     "backend",
-    "frontend"
+    "interactive-course-studio-main"
   ],
   "scripts": {
     "dev": "npm run dev -w backend",
-    "dev:frontend": "npm run dev -w frontend",
-    "build": "npm run build -w backend && npm run build -w frontend",
+    "dev:frontend": "npm run dev -w interactive-course-studio-main",
+    "build": "npm run build -w backend && npm run build -w interactive-course-studio-main",
     "start": "npm run start -w backend",
     "format": "echo skip",
     "typecheck": "echo skip"

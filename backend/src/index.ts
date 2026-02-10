@@ -12,6 +12,8 @@ import Stripe from "stripe"
 import { z } from "zod"
 import { createExportRouter } from "./routes/export"
 import { createEmbedRouter } from "./routes/embed"
+import { createAuthRouter } from "./routes/auth"
+import { createWebooksRouter } from "./routes/webooks"
 import { parseJson } from "./utils/parse"
 const app = express()
 app.use(express.json({ limit: "2mb", verify: (req: any, res: any, buf: Buffer) => { req.rawBody = buf } }))
@@ -55,73 +57,8 @@ function allowRoles(roles: string[]) {
     next()
   }
 }
-const registerSchema = z.object({ email: z.string().email(), password: z.string().min(8), name: z.string().min(1) })
-app.post("/api/auth/register", async (req: any, res: Response) => {
-  const parsed = registerSchema.safeParse(req.body)
-  if (!parsed.success) return res.status(400).json({ error: "invalid" })
-  const { email, password, name } = parsed.data
-  const existing = await prisma.user.findUnique({ where: { email } })
-  if (existing) return res.status(409).json({ error: "exists" })
-  const hash = await bcrypt.hash(password, 10)
-  const user = await prisma.user.create({ data: { email, password: hash, name, role: "EDITOR" } })
-  const token = signToken({ id: user.id, role: user.role })
-  res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } })
-})
-const loginSchema = z.object({ email: z.string().email(), password: z.string().min(8) })
-app.post("/api/auth/login", async (req: any, res: Response) => {
-  const parsed = loginSchema.safeParse(req.body)
-  if (!parsed.success) return res.status(400).json({ error: "invalid" })
-  const { email, password } = parsed.data
-  const user = await prisma.user.findUnique({ where: { email } })
-  if (!user) return res.status(401).json({ error: "invalid" })
-  const ok = await bcrypt.compare(password, user.password)
-  if (!ok) return res.status(401).json({ error: "invalid" })
-  const token = signToken({ id: user.id, role: user.role })
-  res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } })
-})
-const webookSchema = z.object({ title: z.string().min(1), slug: z.string().min(1), theme: z.any(), priceCents: z.number().int().nonnegative() })
-app.post("/api/webooks", auth, allowRoles(["ADMIN", "EDITOR"]), async (req: any, res: any) => {
-  const parsed = webookSchema.safeParse(req.body)
-  if (!parsed.success) return res.status(400).json({ error: "invalid" })
-  const data = parsed.data
-  const webook = await prisma.webook.create({ data: { ...data, theme: JSON.stringify(data.theme), authorId: req.user.id } })
-  res.json(webook)
-})
-app.get("/api/webooks", auth, async (req: any, res: any) => {
-  const list = await prisma.webook.findMany({ where: { authorId: req.user.id }, orderBy: { createdAt: "desc" } })
-  res.json(list)
-})
-app.get("/api/webooks/:slug", async (req: Request, res: Response) => {
-  const webook = await prisma.webook.findUnique({ where: { slug: req.params.slug }, include: { chapters: { include: { blocks: true }, orderBy: { order: "asc" } } } })
-  if (!webook) return res.status(404).json({ error: "not_found" })
-  const authHeader = req.headers.authorization
-  const cookieToken = (req as any).cookies?.token
-  const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : cookieToken
-  let userId: string | undefined
-  if (token) {
-    try { userId = (jwt.verify(token, JWT_SECRET) as any).id } catch {}
-  }
-  let canAccess = webook.status === "PUBLIC" || webook.priceCents === 0
-  if (!canAccess && userId) {
-    if (userId === webook.authorId) canAccess = true
-    else {
-      const purchase = await prisma.purchase.findFirst({ where: { userId, webookId: webook.id, status: "SUCCEEDED" } })
-      if (purchase) canAccess = true
-    }
-  }
-  if (!canAccess) return res.status(402).json({ error: "payment_required" })
-  const withParsed: any = { ...webook, theme: parseJson(webook.theme) }
-  withParsed.chapters = (webook.chapters || []).map((c: any) => ({ ...c, blocks: (c.blocks || []).map((b: any) => ({ ...b, content: parseJson(b.content) })) }))
-  res.json(withParsed)
-})
-app.put("/api/webooks/:id", auth, allowRoles(["ADMIN", "EDITOR"]), async (req: any, res: Response) => {
-  const webook = await prisma.webook.update({ where: { id: req.params.id }, data: req.body })
-  res.json(webook)
-})
-app.delete("/api/webooks/:id", auth, allowRoles(["ADMIN", "EDITOR"]), async (req: any, res: Response) => {
-  await prisma.webook.delete({ where: { id: req.params.id } })
-  res.json({ ok: true })
-})
+app.use("/api/auth", createAuthRouter(prisma, signToken))
+app.use("/api/webooks", createWebooksRouter(prisma, auth, allowRoles, JWT_SECRET))
 const chapterSchema = z.object({ title: z.string().min(1), order: z.number().int().nonnegative() })
 app.post("/api/webooks/:id/chapters", auth, allowRoles(["ADMIN", "EDITOR"]), async (req: any, res: Response) => {
   const parsed = chapterSchema.safeParse(req.body)

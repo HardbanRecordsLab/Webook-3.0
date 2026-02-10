@@ -1,0 +1,3661 @@
+
+
+App.tsx
+538 lines
+
+tsx
+
+
+index.html
+50 lines
+
+html
+
+
+index.tsx
+17 lines
+
+tsx
+
+
+Dobrze — teraz już mamy **pełny obraz**. Na podstawie dostarczonego raportu **DTR STUDIO ENGINE** oraz Twojego realnego use-case’u (ebook + HTML karty pracy + multimedia + brak ingerencji w treść) poniżej **dopracowuję aplikację**, ale **nie jako opis marketingowy**, tylko jako **konkretną ewolucję
+
+pasted
+
+dopracuj app do perfekcji kroyko i zwiezle
+
+18 sty
+DTR STUDIO ENGINE v2.0 – ASSEMBLY-FIRST EVOLUTION
+KRYTYCZNE ZMIANY KONCEPCYJNE
+1. DUAL-MODE ARCHITECTURE
+typescript
+enum WorkflowMode {
+  ASSEMBLY = 'assembly',  // Nowy tryb główny
+  STUDIO = 'studio'       // Obecny tryb layoutu
+}
+ASSEMBLY MODE (nowy priorytet):
+
+Zero AI ingerencji w treść
+Manifest-driven injection
+Placeholders → Assets mapping
+Validation-first approach
+STUDIO MODE (obecny):
+
+Visual DNA dla layoutu
+Typography orchestration
+Print-ready DTP
+2. MANIFEST-DRIVEN SYSTEM
+Dodaj nowy moduł services/manifestService.ts:
+
+typescript
+interface AssemblyManifest {
+  version: string;
+  sections: {
+    id: string;
+    placeholder: string;  // {{WORKCARD_DAY_01}}
+    type: 'html' | 'audio' | 'image';
+    source: string;
+    metadata?: Record<string, any>;
+  }[];
+}
+```
+
+**Workflow:**
+```
+1. Upload manifest.json
+2. Parse placeholders
+3. Validate assets presence
+4. Inject deterministically
+5. Export atomic
+3. NOWA STRUKTURA KROKÓW
+typescript
+enum Step {
+  MODE_SELECT = 'mode-select',           // NOWE
+  
+  // ASSEMBLY PATH
+  MANIFEST_UPLOAD = 'manifest-upload',   // NOWE
+  ASSET_MAPPING = 'asset-mapping',       // NOWE
+  ASSEMBLY_VALIDATE = 'assembly-validate', // NOWE
+  
+  // STUDIO PATH (obecne)
+  MANUSCRIPT_INGEST = 'manuscript-ingest',
+  DTP_ORCHESTRATION = 'dtp-orchestration',
+  ASSET_CONFIGURATION = 'asset-configuration',
+  PREFLIGHT_PROOFING = 'preflight-proofing'
+}
+4. INLINE HTML INJECTION (killer feature)
+Zamiast iframe → native injection:
+
+typescript
+interface WorkcardAsset extends ChapterAsset {
+  type: 'workcard-html';
+  inlineHTML: string;
+  scopedCSS: string;
+  placeholder: string; // {{WORKCARD_01}}
+}
+Rendering:
+
+tsx
+<section 
+  data-workcard-id={asset.id}
+  dangerouslySetInnerHTML={{ __html: asset.inlineHTML }}
+  style={{ isolation: 'isolate' }} // CSS sandboxing
+/>
+5. AI OGRANICZONY DO VALIDATION
+Nowy plik services/assemblyValidator.ts:
+
+typescript
+async function validateAssembly(manifest, assets) {
+  return await callAI({
+    prompt: `
+      STRICT TASK: Validate assembly completeness.
+      
+      Manifest placeholders: ${JSON.stringify(manifest)}
+      Available assets: ${JSON.stringify(assets)}
+      
+      Return JSON:
+      {
+        "missing": ["{{PLACEHOLDER}}", ...],
+        "orphaned": ["asset_without_placeholder", ...],
+        "status": "COMPLETE" | "INCOMPLETE"
+      }
+      
+      DO NOT generate content.
+      DO NOT suggest layouts.
+      ONLY validate mapping.
+    `
+  });
+}
+Tokenów używane: ~90% mniej niż teraz.
+
+6. SPLIT VIEW UI (Assembly Mode)
+tsx
+<div className="grid grid-cols-2 gap-8">
+  {/* LEFT: Structure Tree */}
+  <div className="space-y-4">
+    {manifest.sections.map(s => (
+      <div className={placeholderMapped(s) ? 'bg-green-500/10' : 'bg-red-500/10'}>
+        <code>{s.placeholder}</code>
+        {s.source && <CheckCircle2 />}
+      </div>
+    ))}
+  </div>
+  
+  {/* RIGHT: Live Preview */}
+  <iframe src={assemblyPreview} />
+</div>
+7. NOWY FLOW STARTOWY
+tsx
+// MODE_SELECT screen
+<div className="grid grid-cols-2 gap-20">
+  <button onClick={() => setMode('assembly')}>
+    <Command size={80} />
+    <h2>ASSEMBLY MODE</h2>
+    <p>Manifest-driven ebook assembly</p>
+    <span>Perfect for: workbooks, courses, therapy</span>
+  </button>
+  
+  <button onClick={() => setMode('studio')}>
+    <Palette size={80} />
+    <h2>STUDIO MODE</h2>
+    <p>AI-powered layout orchestration</p>
+    <span>Perfect for: novels, portfolios, magazines</span>
+  </button>
+</div>
+8. MANIFEST.JSON SCHEMA
+json
+{
+  "$schema": "https://dtr.studio/manifest.schema.json",
+  "version": "2.0",
+  "metadata": {
+    "title": "30-Day Therapy Workbook",
+    "author": "Dr. Example"
+  },
+  "sections": [
+    {
+      "id": "day-01",
+      "chapter": 1,
+      "placeholders": {
+        "{{WORKCARD_01}}": "workcards/day01.html",
+        "{{AUDIO_01}}": "audio/meditation01.mp3",
+        "{{IMAGE_01}}": "images/nature01.jpg"
+      }
+    }
+  ],
+  "assets": {
+    "css": "styles/workbook.css",
+    "fonts": ["fonts/Inter.woff2"]
+  }
+}
+9. VALIDATION DASHBOARD (nowy UI)
+tsx
+<div className="bg-slate-900 p-12 rounded-3xl">
+  <h3>Assembly Validation Report</h3>
+  
+  <div className="space-y-4">
+    <div className="flex justify-between">
+      <span>Placeholders detected</span>
+      <span className="font-black">{validation.total}</span>
+    </div>
+    <div className="flex justify-between">
+      <span>Assets mapped</span>
+      <span className="text-green-500">{validation.mapped}</span>
+    </div>
+    <div className="flex justify-between">
+      <span>Missing assets</span>
+      <span className="text-red-500">{validation.missing.length}</span>
+    </div>
+  </div>
+  
+  {validation.status === 'COMPLETE' && (
+    <button className="w-full bg-green-500">
+      Generate Final Ebook
+    </button>
+  )}
+</div>
+10. EXPORT ENGINE (deterministyczny)
+typescript
+async function exportEbook(mode: 'html' | 'epub' | 'pdf') {
+  const assembled = await assembleFromManifest(manifest, assets);
+  
+  switch(mode) {
+    case 'html':
+      return bundleHTML(assembled); // Single HTML + embedded assets
+    case 'epub':
+      return bundleEPUB(assembled); // EPUB3 spec
+    case 'pdf':
+      return workerPDF(assembled);  // Off-thread rendering
+  }
+}
+IMPLEMENTACJA – PRIORYTET
+Dodaj MODE_SELECT screen (1h)
+Stwórz manifestService.ts (2h)
+Zaimplementuj placeholder parser (3h)
+Dodaj validation dashboard (2h)
+Testuj na realnym workbook (4h)
+Total MVP: ~12h pracy.
+
+USP (NOWY)
+"From Manuscript to Interactive Book – Without Touching Your Words"
+
+Dlaczego to wygrywa:
+
+Terapeuci: "Nie zmienisz mojej metodyki"
+Edukatorzy: "Potrzebuję stabilności, nie kreatywności AI"
+Autorzy: "Mój tekst jest świętością"
+MONETYZACJA – NOWY TIER
+ASSEMBLY PRO ($29/mo):
+
+Unlimited manifest assemblies
+Zero AI layout overhead
+Batch processing API
+White-label export
+Target: Terapeuci, szkoły, wydawcy workbooków.
+
+Gotowe do implementacji. Kod czy architektura najpierw?
+
+architektura
+
+18 sty
+DTR STUDIO ENGINE v2.0 – ARCHITEKTURA TECHNICZNA
+1. STRUKTURA KATALOGÓW (FINALNA)
+dtr-studio-engine/
+├── src/
+│   ├── modes/                          # NOWE - Separation of Concerns
+│   │   ├── assembly/
+│   │   │   ├── AssemblyWorkflow.tsx
+│   │   │   ├── ManifestUpload.tsx
+│   │   │   ├── AssetMapper.tsx
+│   │   │   ├── ValidationDashboard.tsx
+│   │   │   └── AssemblyPreview.tsx
+│   │   │
+│   │   └── studio/
+│   │       ├── StudioWorkflow.tsx
+│   │       ├── ManuscriptIngest.tsx
+│   │       ├── AssetConfiguration.tsx
+│   │       └── PreflightProofing.tsx
+│   │
+│   ├── services/
+│   │   ├── assembly/                   # NOWE - Assembly Engine
+│   │   │   ├── manifestService.ts      # Parse & validate manifest
+│   │   │   ├── placeholderParser.ts    # Detect {{PLACEHOLDERS}}
+│   │   │   ├── assetInjector.ts        # Inject HTML/media
+│   │   │   ├── assemblyValidator.ts    # AI-powered validation only
+│   │   │   └── exportEngine.ts         # HTML/EPUB/PDF export
+│   │   │
+│   │   ├── studio/                     # Obecne serwisy
+│   │   │   ├── geminiService.ts
+│   │   │   ├── metadataService.ts
+│   │   │   └── qrService.ts
+│   │   │
+│   │   └── shared/
+│   │       ├── storageService.ts       # Unified storage
+│   │       └── workerPool.ts           # Off-thread processing
+│   │
+│   ├── types/
+│   │   ├── assembly.types.ts           # NOWE
+│   │   ├── studio.types.ts             # Refactor z types.ts
+│   │   └── shared.types.ts
+│   │
+│   ├── workers/                        # NOWE - Off-main-thread
+│   │   ├── pdf.worker.ts
+│   │   ├── epub.worker.ts
+│   │   └── validation.worker.ts
+│   │
+│   ├── components/
+│   │   ├── shared/
+│   │   │   ├── ModeSelector.tsx        # NOWE - Entry point
+│   │   │   ├── StepIndicator.tsx
+│   │   │   └── Sidebar.tsx
+│   │   │
+│   │   └── assembly/
+│   │       ├── PlaceholderTree.tsx     # NOWE
+│   │       ├── AssetMappingPanel.tsx   # NOWE
+│   │       └── ValidationReport.tsx    # NOWE
+│   │
+│   ├── schemas/
+│   │   └── manifest.schema.json        # NOWE - JSON Schema validation
+│   │
+│   └── App.tsx                         # Refactored - mode router
+│
+├── public/
+│   ├── examples/                       # NOWE - Example manifests
+│   │   ├── therapy-workbook.json
+│   │   ├── course-ebook.json
+│   │   └── interactive-novel.json
+│   │
+│   └── templates/                      # Manifest templates
+│       └── manifest.template.json
+│
+└── docs/
+    ├── ASSEMBLY_GUIDE.md               # NOWE
+    ├── MANIFEST_SPEC.md                # NOWE
+    └── API.md
+2. TYPE SYSTEM (assembly.types.ts)
+typescript
+// ============ MANIFEST TYPES ============
+
+export interface AssemblyManifest {
+  $schema: string;
+  version: '2.0';
+  metadata: ManifestMetadata;
+  sections: ManifestSection[];
+  assets: GlobalAssets;
+  config?: AssemblyConfig;
+}
+
+export interface ManifestMetadata {
+  title: string;
+  author: string;
+  isbn?: string;
+  language: string;
+  genre?: string;
+  description?: string;
+}
+
+export interface ManifestSection {
+  id: string;
+  chapter: number;
+  title: string;
+  placeholders: Record<string, string>; // {{KEY}}: "path/to/asset"
+  metadata?: {
+    wordCount?: number;
+    duration?: number; // for audio
+    interactivity?: 'static' | 'interactive';
+  };
+}
+
+export interface GlobalAssets {
+  css?: string[];
+  fonts?: string[];
+  scripts?: string[];
+}
+
+export interface AssemblyConfig {
+  strict: boolean;           // Fail on missing assets?
+  inlineCSS: boolean;        // Inline or external CSS?
+  sandboxHTML: boolean;      // Isolate workcard styles?
+  optimizeImages: boolean;   // Compress on export?
+}
+
+// ============ PROCESSING TYPES ============
+
+export interface PlaceholderMapping {
+  placeholder: string;       // {{WORKCARD_01}}
+  type: AssetType;
+  sourcePath: string;
+  resolved: boolean;
+  asset?: ProcessedAsset;
+}
+
+export interface ProcessedAsset {
+  id: string;
+  originalPath: string;
+  processedURL: string;      // Blob URL or base64
+  type: AssetType;
+  size: number;
+  checksum: string;          // For integrity validation
+}
+
+export interface ValidationResult {
+  status: 'COMPLETE' | 'INCOMPLETE' | 'ERROR';
+  total: number;
+  mapped: number;
+  missing: PlaceholderMapping[];
+  orphaned: string[];        // Assets without placeholders
+  errors: ValidationError[];
+}
+
+export interface ValidationError {
+  type: 'MISSING_ASSET' | 'INVALID_PATH' | 'UNSUPPORTED_TYPE';
+  placeholder: string;
+  message: string;
+  severity: 'ERROR' | 'WARNING';
+}
+
+// ============ EXPORT TYPES ============
+
+export interface ExportConfig {
+  format: 'html' | 'epub' | 'pdf';
+  quality: 'draft' | 'print' | 'digital';
+  includeMetadata: boolean;
+  compression: boolean;
+}
+
+export interface ExportResult {
+  success: boolean;
+  format: string;
+  size: number;
+  downloadURL: string;
+  metadata: {
+    pages?: number;
+    assets: number;
+    generatedAt: string;
+  };
+}
+3. MANIFEST SERVICE (manifestService.ts)
+typescript
+import Ajv from 'ajv';
+import manifestSchema from '../schemas/manifest.schema.json';
+
+const ajv = new Ajv();
+const validateSchema = ajv.compile(manifestSchema);
+
+export class ManifestService {
+  
+  // Parse i walidacja manifestu
+  static async parseManifest(file: File): Promise<AssemblyManifest> {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    
+    if (!validateSchema(data)) {
+      throw new Error(`Invalid manifest: ${JSON.stringify(validateSchema.errors)}`);
+    }
+    
+    return data as AssemblyManifest;
+  }
+  
+  // Ekstrakcja wszystkich placeholderów
+  static extractPlaceholders(manifest: AssemblyManifest): PlaceholderMapping[] {
+    const mappings: PlaceholderMapping[] = [];
+    
+    manifest.sections.forEach(section => {
+      Object.entries(section.placeholders).forEach(([key, path]) => {
+        mappings.push({
+          placeholder: key,
+          type: this.detectAssetType(path),
+          sourcePath: path,
+          resolved: false
+        });
+      });
+    });
+    
+    return mappings;
+  }
+  
+  // Detekcja typu assetu z rozszerzenia
+  private static detectAssetType(path: string): AssetType {
+    const ext = path.split('.').pop()?.toLowerCase();
+    
+    if (['html', 'htm'].includes(ext!)) return 'workcard-html';
+    if (['mp3', 'wav', 'ogg'].includes(ext!)) return 'audio';
+    if (['jpg', 'jpeg', 'png', 'webp'].includes(ext!)) return 'raster';
+    if (['svg'].includes(ext!)) return 'vector';
+    
+    return 'source';
+  }
+  
+  // Walidacja struktury (bez AI)
+  static validateStructure(manifest: AssemblyManifest): ValidationError[] {
+    const errors: ValidationError[] = [];
+    
+    // Check sections order
+    const chapters = manifest.sections.map(s => s.chapter);
+    if (chapters.some((ch, i) => i > 0 && ch <= chapters[i-1])) {
+      errors.push({
+        type: 'INVALID_PATH',
+        placeholder: 'sections',
+        message: 'Chapters must be in ascending order',
+        severity: 'ERROR'
+      });
+    }
+    
+    // Check duplicate placeholders
+    const allPlaceholders = manifest.sections.flatMap(s => 
+      Object.keys(s.placeholders)
+    );
+    const duplicates = allPlaceholders.filter((p, i) => 
+      allPlaceholders.indexOf(p) !== i
+    );
+    
+    if (duplicates.length > 0) {
+      errors.push({
+        type: 'INVALID_PATH',
+        placeholder: duplicates[0],
+        message: `Duplicate placeholder: ${duplicates[0]}`,
+        severity: 'ERROR'
+      });
+    }
+    
+    return errors;
+  }
+}
+4. PLACEHOLDER PARSER (placeholderParser.ts)
+typescript
+export class PlaceholderParser {
+  
+  // Wykryj wszystkie {{PLACEHOLDERS}} w tekście
+  static detectInText(text: string): string[] {
+    const regex = /\{\{([A-Z0-9_]+)\}\}/g;
+    const matches = [...text.matchAll(regex)];
+    return [...new Set(matches.map(m => `{{${m[1]}}}`))];
+  }
+  
+  // Zamień placeholdery na rzeczywisty content
+  static async injectContent(
+    text: string,
+    mappings: Map<string, ProcessedAsset>
+  ): Promise<string> {
+    let result = text;
+    
+    for (const [placeholder, asset] of mappings) {
+      const replacement = await this.generateReplacement(asset);
+      result = result.replaceAll(placeholder, replacement);
+    }
+    
+    return result;
+  }
+  
+  // Generuj HTML replacement w zależności od typu
+  private static async generateReplacement(asset: ProcessedAsset): Promise<string> {
+    switch (asset.type) {
+      case 'workcard-html':
+        return `
+          <section 
+            data-workcard-id="${asset.id}"
+            data-checksum="${asset.checksum}"
+            class="workcard-inject"
+            style="isolation: isolate;"
+          >
+            ${await fetch(asset.processedURL).then(r => r.text())}
+          </section>
+        `;
+      
+      case 'audio':
+        return `
+          <audio 
+            controls 
+            data-asset-id="${asset.id}"
+            class="audio-inject"
+          >
+            <source src="${asset.processedURL}" type="audio/mpeg">
+          </audio>
+        `;
+      
+      case 'raster':
+        return `
+          <figure data-asset-id="${asset.id}" class="image-inject">
+            <img 
+              src="${asset.processedURL}" 
+              alt="Asset ${asset.id}"
+              loading="lazy"
+            />
+          </figure>
+        `;
+      
+      default:
+        return `<!-- UNSUPPORTED ASSET TYPE: ${asset.type} -->`;
+    }
+  }
+}
+5. ASSEMBLY VALIDATOR (assemblyValidator.ts)
+typescript
+export class AssemblyValidator {
+  
+  // AI-powered semantic validation (TYLKO validation, zero content generation)
+  static async validateWithAI(
+    manifest: AssemblyManifest,
+    mappings: PlaceholderMapping[]
+  ): Promise<ValidationResult> {
+    
+    const prompt = `
+STRICT VALIDATION TASK - DO NOT GENERATE CONTENT
+
+Manifest sections: ${manifest.sections.length}
+Expected placeholders: ${mappings.length}
+
+Placeholders status:
+${mappings.map(m => `${m.placeholder}: ${m.resolved ? 'RESOLVED' : 'MISSING'}`).join('\n')}
+
+YOUR TASK:
+1. Identify missing assets
+2. Detect orphaned files
+3. Check naming consistency
+4. Report errors
+
+RETURN ONLY JSON:
+{
+  "status": "COMPLETE" | "INCOMPLETE",
+  "missing": ["{{PLACEHOLDER}}", ...],
+  "orphaned": ["filename.ext", ...],
+  "warnings": ["message", ...]
+}
+
+DO NOT:
+- Generate placeholder content
+- Suggest layouts
+- Modify manifest
+- Create assets
+`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    
+    const data = await response.json();
+    const result = JSON.parse(
+      data.content[0].text.replace(/```json|```/g, '').trim()
+    );
+    
+    return {
+      status: result.status,
+      total: mappings.length,
+      mapped: mappings.filter(m => m.resolved).length,
+      missing: mappings.filter(m => !m.resolved),
+      orphaned: result.orphaned || [],
+      errors: result.warnings?.map((w: string) => ({
+        type: 'MISSING_ASSET',
+        placeholder: '',
+        message: w,
+        severity: 'WARNING'
+      })) || []
+    };
+  }
+  
+  // Lokalna walidacja (bez AI)
+  static validateLocal(mappings: PlaceholderMapping[]): ValidationResult {
+    return {
+      status: mappings.every(m => m.resolved) ? 'COMPLETE' : 'INCOMPLETE',
+      total: mappings.length,
+      mapped: mappings.filter(m => m.resolved).length,
+      missing: mappings.filter(m => !m.resolved),
+      orphaned: [],
+      errors: []
+    };
+  }
+}
+6. EXPORT ENGINE (exportEngine.ts)
+typescript
+export class ExportEngine {
+  
+  // Export do HTML (single file)
+  static async exportHTML(
+    manifest: AssemblyManifest,
+    assembledContent: string,
+    assets: ProcessedAsset[]
+  ): Promise<ExportResult> {
+    
+    const html = `
+<!DOCTYPE html>
+<html lang="${manifest.metadata.language}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="author" content="${manifest.metadata.author}">
+  <title>${manifest.metadata.title}</title>
+  <style>${await this.bundleCSS(manifest.assets.css || [])}</style>
+</head>
+<body>
+  <main class="ebook-container">
+    ${assembledContent}
+  </main>
+  <script>${await this.bundleScripts(manifest.assets.scripts || [])}</script>
+</body>
+</html>
+    `;
+    
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    
+    return {
+      success: true,
+      format: 'html',
+      size: blob.size,
+      downloadURL: url,
+      metadata: {
+        assets: assets.length,
+        generatedAt: new Date().toISOString()
+      }
+    };
+  }
+  
+  // Export do EPUB (via worker)
+  static async exportEPUB(
+    manifest: AssemblyManifest,
+    assembledContent: string,
+    assets: ProcessedAsset[]
+  ): Promise<ExportResult> {
+    
+    const worker = new Worker(new URL('../workers/epub.worker.ts', import.meta.url));
+    
+    return new Promise((resolve, reject) => {
+      worker.postMessage({
+        manifest,
+        content: assembledContent,
+        assets
+      });
+      
+      worker.onmessage = (e) => {
+        if (e.data.success) {
+          resolve(e.data);
+        } else {
+          reject(e.data.error);
+        }
+        worker.terminate();
+      };
+    });
+  }
+  
+  // Export do PDF (via worker - heavy processing)
+  static async exportPDF(
+    manifest: AssemblyManifest,
+    assembledContent: string,
+    config: ExportConfig
+  ): Promise<ExportResult> {
+    
+    const worker = new Worker(new URL('../workers/pdf.worker.ts', import.meta.url));
+    
+    return new Promise((resolve, reject) => {
+      worker.postMessage({
+        manifest,
+        content: assembledContent,
+        config
+      });
+      
+      worker.onmessage = (e) => {
+        if (e.data.success) {
+          resolve(e.data);
+        } else {
+          reject(e.data.error);
+        }
+        worker.terminate();
+      };
+    });
+  }
+  
+  private static async bundleCSS(cssPaths: string[]): Promise<string> {
+    const styles = await Promise.all(
+      cssPaths.map(path => fetch(path).then(r => r.text()))
+    );
+    return styles.join('\n\n');
+  }
+  
+  private static async bundleScripts(scriptPaths: string[]): Promise<string> {
+    const scripts = await Promise.all(
+      scriptPaths.map(path => fetch(path).then(r => r.text()))
+    );
+    return scripts.join('\n\n');
+  }
+}
+7. APP.TSX (refactored - mode router)
+typescript
+const App: React.FC = () => {
+  const [mode, setMode] = useState<WorkflowMode | null>(null);
+  
+  // MODE SELECTION
+  if (!mode) {
+    return <ModeSelector onSelect={setMode} />;
+  }
+  
+  // ASSEMBLY WORKFLOW
+  if (mode === WorkflowMode.ASSEMBLY) {
+    return <AssemblyWorkflow />;
+  }
+  
+  // STUDIO WORKFLOW
+  return <StudioWorkflow />;
+};
+```
+
+---
+
+## 8. DATA FLOW (ASSEMBLY MODE)
+```
+USER UPLOADS
+  ↓
+manifest.json + assets.zip
+  ↓
+ManifestService.parseManifest()
+  ↓
+PlaceholderParser.detectInText()
+  ↓
+User maps assets via UI
+  ↓
+AssemblyValidator.validateLocal()
+  ↓
+[OPTIONAL] AssemblyValidator.validateWithAI()
+  ↓
+PlaceholderParser.injectContent()
+  ↓
+ExportEngine.export{HTML|EPUB|PDF}()
+  ↓
+DOWNLOAD FINAL EBOOK
+Kluczowe: AI wywoływane tylko raz, na końcu, do walidacji.
+
+9. WORKER ARCHITECTURE (pdf.worker.ts example)
+typescript
+// pdf.worker.ts
+import * as pdfjsLib from 'pdfjs-dist';
+
+self.onmessage = async (e) => {
+  const { manifest, content, config } = e.data;
+  
+  try {
+    // Heavy PDF processing off main thread
+    const pdfDoc = await generatePDF(content, config);
+    const blob = await pdfDoc.output('blob');
+    const url = URL.createObjectURL(blob);
+    
+    self.postMessage({
+      success: true,
+      format: 'pdf',
+      size: blob.size,
+      downloadURL: url,
+      metadata: {
+        pages: pdfDoc.internal.pages.length,
+        generatedAt: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    self.postMessage({
+      success: false,
+      error: error.message
+    });
+  }
+};
+10. MANIFEST SCHEMA (manifest.schema.json)
+json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://dtr.studio/manifest.schema.json",
+  "title": "DTR Assembly Manifest",
+  "type": "object",
+  "required": ["version", "metadata", "sections"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["2.0"]
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["title", "author", "language"],
+      "properties": {
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "language": { "type": "string", "pattern": "^[a-z]{2}$" },
+        "isbn": { "type": "string" }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "chapter", "title", "placeholders"],
+        "properties": {
+          "id": { "type": "string" },
+          "chapter": { "type": "integer", "minimum": 1 },
+          "title": { "type": "string" },
+          "placeholders": {
+            "type": "object",
+            "patternProperties": {
+              "^\\{\\{[A-Z0-9_]+\\}\\}$": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+11. STORAGE STRATEGY
+Local Development
+typescript
+// In-memory podczas edycji
+const assemblyStore = new Map<string, ProcessedAsset>();
+
+// Persist do localStorage tylko manifest
+localStorage.setItem('dtr_manifest', JSON.stringify(manifest));
+Production
+typescript
+// Claude Artifacts Storage API
+await window.storage.set(
+  `manifest:${projectId}`, 
+  JSON.stringify(manifest)
+);
+
+// Assets jako base64 chunks (max 5MB per key)
+await window.storage.set(
+  `asset:${assetId}:chunk0`,
+  base64Chunk,
+  false // personal data
+);
+12. PERFORMANCE TARGETS
+Operacja	Target	Method
+Parse manifest	<100ms	Sync JSON.parse + validation
+Map 50 assets	<2s	Async parallel processing
+Validate structure	<500ms	Local checks only
+AI validation (optional)	<5s	Single API call
+Inject placeholders	<3s	String replacement batch
+Export HTML	<1s	Template + bundle
+Export EPUB	<5s	Worker thread
+Export PDF	<15s	Worker thread
+13. ERROR HANDLING STRATEGY
+typescript
+class AssemblyError extends Error {
+  constructor(
+    public code: string,
+    public severity: 'ERROR' | 'WARNING',
+    message: string
+  ) {
+    super(message);
+  }
+}
+
+// Usage
+try {
+  const manifest = await ManifestService.parseManifest(file);
+} catch (e) {
+  if (e instanceof AssemblyError) {
+    if (e.severity === 'ERROR') {
+      showErrorModal(e.message);
+    } else {
+      showWarningToast(e.message);
+    }
+  }
+}
+14. TESTING STRATEGY
+typescript
+// Unit tests
+describe('ManifestService', () => {
+  it('should parse valid manifest', () => {});
+  it('should reject invalid schema', () => {});
+  it('should extract placeholders', () => {});
+});
+
+// Integration tests
+describe('Assembly Pipeline', () => {
+  it('should complete full assembly workflow', () => {});
+  it('should handle missing assets gracefully', () => {});
+});
+
+// E2E tests (Playwright)
+test('User uploads manifest and exports HTML', async ({ page }) => {
+  // ...
+});
+IMPLEMENTATION ROADMAP
+Phase 1: Foundation (Week 1)
+ Refactor folder structure
+ Create type definitions
+ Implement ManifestService
+ Implement PlaceholderParser
+Phase 2: Core Assembly (Week 2)
+ Build AssetMapper UI
+ Implement validation (local + AI)
+ Create ValidationDashboard
+ Implement HTML export
+Phase 3: Advanced Export (Week 3)
+ Create PDF worker
+ Create EPUB worker
+ Implement worker pool
+ Add progress tracking
+Phase 4: Polish (Week 4)
+ Mode selector UI
+ Example manifests
+ Documentation
+ Testing suite
+Gotowe. Kod implementacji teraz czy dalsze dopracowanie?
+
+da;szr dopracowanie
+
+19 sty
+DTR STUDIO ENGINE v2.0 – DALSZE DOPRACOWANIE ARCHITEKTURY
+1. CRITICAL: SECURITY & SANDBOXING
+Problem
+Wstrzykiwanie user-generated HTML = XSS risk.
+
+Rozwiązanie: Multi-layer Sandboxing
+typescript
+// services/assembly/htmlSanitizer.ts
+
+import DOMPurify from 'dompurify';
+
+export class HTMLSanitizer {
+  
+  private static ALLOWED_TAGS = [
+    'div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'ul', 'ol', 'li', 'table', 'tr', 'td', 'th',
+    'input', 'textarea', 'label', 'button', 'select', 'option',
+    'img', 'audio', 'video', 'canvas'
+  ];
+  
+  private static ALLOWED_ATTRS = [
+    'class', 'id', 'style', 'data-*', 
+    'type', 'value', 'placeholder', 'name',
+    'src', 'alt', 'width', 'height'
+  ];
+  
+  private static FORBIDDEN_PATTERNS = [
+    /javascript:/gi,
+    /on\w+=/gi,  // onclick, onerror, etc.
+    /<script/gi,
+    /<iframe/gi,
+    /eval\(/gi
+  ];
+  
+  // Sanitize HTML przed injection
+  static sanitize(html: string, strict: boolean = true): string {
+    
+    // 1. Check for forbidden patterns
+    for (const pattern of this.FORBIDDEN_PATTERNS) {
+      if (pattern.test(html)) {
+        throw new AssemblyError(
+          'SECURITY_VIOLATION',
+          'ERROR',
+          `Forbidden pattern detected: ${pattern.source}`
+        );
+      }
+    }
+    
+    // 2. DOMPurify clean
+    const clean = DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: strict ? this.ALLOWED_TAGS : undefined,
+      ALLOWED_ATTR: this.ALLOWED_ATTRS,
+      ALLOW_DATA_ATTR: true,
+      FORBID_TAGS: ['script', 'iframe', 'object', 'embed'],
+      FORBID_ATTR: ['onerror', 'onload', 'onclick']
+    });
+    
+    // 3. Wrap w sandboxed container
+    return `
+      <div 
+        class="workcard-sandbox" 
+        data-sanitized="true"
+        style="
+          all: initial;
+          display: block;
+          isolation: isolate;
+          contain: layout style paint;
+        "
+      >
+        ${clean}
+      </div>
+    `;
+  }
+  
+  // CSS isolation via Shadow DOM (optional)
+  static wrapInShadowDOM(html: string, css: string): string {
+    return `
+      <div class="shadow-host">
+        <template shadowrootmode="open">
+          <style>
+            :host { all: initial; display: block; }
+            ${css}
+          </style>
+          ${html}
+        </template>
+      </div>
+    `;
+  }
+}
+Implementacja w PlaceholderParser:
+
+typescript
+private static async generateReplacement(asset: ProcessedAsset): Promise<string> {
+  switch (asset.type) {
+    case 'workcard-html':
+      const rawHTML = await fetch(asset.processedURL).then(r => r.text());
+      const sanitized = HTMLSanitizer.sanitize(rawHTML, true);
+      
+      return `
+        <section 
+          data-workcard-id="${asset.id}"
+          data-checksum="${asset.checksum}"
+          class="workcard-inject"
+        >
+          ${sanitized}
+        </section>
+      `;
+    // ...
+  }
+}
+2. ASSET PREPROCESSING PIPELINE
+Problem
+User uploady w różnych formatach, rozmiarach, jakościach.
+
+Rozwiązanie: Unified Asset Processor
+typescript
+// services/assembly/assetProcessor.ts
+
+export class AssetProcessor {
+  
+  // Process uploaded file → ProcessedAsset
+  static async process(
+    file: File,
+    type: AssetType,
+    config: ProcessingConfig
+  ): Promise<ProcessedAsset> {
+    
+    switch (type) {
+      case 'workcard-html':
+        return this.processHTML(file, config);
+      case 'raster':
+        return this.processImage(file, config);
+      case 'audio':
+        return this.processAudio(file, config);
+      default:
+        return this.processGeneric(file);
+    }
+  }
+  
+  // HTML processing
+  private static async processHTML(
+    file: File, 
+    config: ProcessingConfig
+  ): Promise<ProcessedAsset> {
+    
+    const html = await file.text();
+    
+    // Extract inline CSS
+    const cssMatch = html.match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+    const inlineCSS = cssMatch ? cssMatch.join('\n') : '';
+    
+    // Remove <html>, <head>, <body> wrappers
+    const bodyContent = html
+      .replace(/<\/?html[^>]*>/gi, '')
+      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+      .replace(/<\/?body[^>]*>/gi, '');
+    
+    // Sanitize
+    const sanitized = HTMLSanitizer.sanitize(bodyContent);
+    
+    // Generate blob
+    const blob = new Blob([sanitized], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    
+    return {
+      id: this.generateAssetId(),
+      originalPath: file.name,
+      processedURL: url,
+      type: 'workcard-html',
+      size: blob.size,
+      checksum: await this.generateChecksum(blob),
+      metadata: {
+        inlineCSS,
+        sanitized: true
+      }
+    };
+  }
+  
+  // Image optimization
+  private static async processImage(
+    file: File,
+    config: ProcessingConfig
+  ): Promise<ProcessedAsset> {
+    
+    const img = await createImageBitmap(file);
+    
+    const canvas = new OffscreenCanvas(
+      config.maxWidth || img.width,
+      config.maxHeight || img.height
+    );
+    
+    const ctx = canvas.getContext('2d')!;
+    
+    // Resize preserving aspect ratio
+    const ratio = Math.min(
+      canvas.width / img.width,
+      canvas.height / img.height
+    );
+    
+    const w = img.width * ratio;
+    const h = img.height * ratio;
+    
+    ctx.drawImage(img, 0, 0, w, h);
+    
+    // Convert to blob
+    const blob = await canvas.convertToBlob({
+      type: config.format || 'image/webp',
+      quality: config.quality || 0.85
+    });
+    
+    const url = URL.createObjectURL(blob);
+    
+    return {
+      id: this.generateAssetId(),
+      originalPath: file.name,
+      processedURL: url,
+      type: 'raster',
+      size: blob.size,
+      checksum: await this.generateChecksum(blob),
+      metadata: {
+        originalSize: file.size,
+        compressionRatio: ((1 - blob.size / file.size) * 100).toFixed(1) + '%',
+        dimensions: { width: w, height: h }
+      }
+    };
+  }
+  
+  // Audio normalization
+  private static async processAudio(
+    file: File,
+    config: ProcessingConfig
+  ): Promise<ProcessedAsset> {
+    
+    // Dla audio możemy tylko validate + convert format
+    const audioContext = new AudioContext();
+    const arrayBuffer = await file.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    
+    // Optional: normalize volume, trim silence, etc.
+    // For now just pass-through
+    
+    const url = URL.createObjectURL(file);
+    
+    return {
+      id: this.generateAssetId(),
+      originalPath: file.name,
+      processedURL: url,
+      type: 'audio',
+      size: file.size,
+      checksum: await this.generateChecksum(file),
+      metadata: {
+        duration: audioBuffer.duration,
+        sampleRate: audioBuffer.sampleRate,
+        channels: audioBuffer.numberOfChannels
+      }
+    };
+  }
+  
+  // Checksum generation (integrity verification)
+  private static async generateChecksum(blob: Blob): Promise<string> {
+    const buffer = await blob.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  
+  private static generateAssetId(): string {
+    return `asset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+}
+
+interface ProcessingConfig {
+  maxWidth?: number;
+  maxHeight?: number;
+  quality?: number;
+  format?: 'image/webp' | 'image/jpeg' | 'image/png';
+}
+3. INCREMENTAL VALIDATION (Real-time Feedback)
+Problem
+User mapuje 50+ assetów → czeka na końcową walidację → błąd → frustracja.
+
+Rozwiązanie: Live Validation Stream
+typescript
+// services/assembly/incrementalValidator.ts
+
+export class IncrementalValidator {
+  
+  private mappings = new Map<string, PlaceholderMapping>();
+  private listeners: Array<(result: PartialValidationResult) => void> = [];
+  
+  // Subscribe to validation updates
+  onUpdate(callback: (result: PartialValidationResult) => void) {
+    this.listeners.push(callback);
+  }
+  
+  // Add/update single mapping
+  async updateMapping(placeholder: string, asset: ProcessedAsset | null) {
+    
+    const mapping = this.mappings.get(placeholder);
+    if (!mapping) return;
+    
+    mapping.asset = asset;
+    mapping.resolved = asset !== null;
+    
+    // Instant validation
+    const validation = this.validateSingle(mapping);
+    
+    // Notify listeners
+    this.notifyUpdate({
+      placeholder,
+      status: validation.status,
+      errors: validation.errors,
+      progress: this.calculateProgress()
+    });
+  }
+  
+  // Validate single mapping
+  private validateSingle(mapping: PlaceholderMapping): ValidationResult {
+    const errors: ValidationError[] = [];
+    
+    if (!mapping.resolved) {
+      errors.push({
+        type: 'MISSING_ASSET',
+        placeholder: mapping.placeholder,
+        message: `Asset not mapped for ${mapping.placeholder}`,
+        severity: 'ERROR'
+      });
+    }
+    
+    if (mapping.asset) {
+      // Type mismatch check
+      const expectedType = this.inferExpectedType(mapping.placeholder);
+      if (expectedType && mapping.asset.type !== expectedType) {
+        errors.push({
+          type: 'UNSUPPORTED_TYPE',
+          placeholder: mapping.placeholder,
+          message: `Expected ${expectedType}, got ${mapping.asset.type}`,
+          severity: 'WARNING'
+        });
+      }
+      
+      // Size check
+      if (mapping.asset.size > 10 * 1024 * 1024) { // 10MB
+        errors.push({
+          type: 'INVALID_PATH',
+          placeholder: mapping.placeholder,
+          message: `Asset size ${(mapping.asset.size / 1024 / 1024).toFixed(1)}MB exceeds 10MB limit`,
+          severity: 'WARNING'
+        });
+      }
+    }
+    
+    return {
+      status: errors.some(e => e.severity === 'ERROR') ? 'INCOMPLETE' : 'COMPLETE',
+      total: 1,
+      mapped: mapping.resolved ? 1 : 0,
+      missing: mapping.resolved ? [] : [mapping],
+      orphaned: [],
+      errors
+    };
+  }
+  
+  // Infer expected type from placeholder name
+  private inferExpectedType(placeholder: string): AssetType | null {
+    if (/WORKCARD|CARD|WORKSHEET/i.test(placeholder)) return 'workcard-html';
+    if (/AUDIO|SOUND|MUSIC/i.test(placeholder)) return 'audio';
+    if (/IMAGE|IMG|PHOTO|PICTURE/i.test(placeholder)) return 'raster';
+    return null;
+  }
+  
+  // Calculate overall progress
+  private calculateProgress(): number {
+    const total = this.mappings.size;
+    const resolved = Array.from(this.mappings.values()).filter(m => m.resolved).length;
+    return total > 0 ? (resolved / total) * 100 : 0;
+  }
+  
+  private notifyUpdate(result: PartialValidationResult) {
+    this.listeners.forEach(cb => cb(result));
+  }
+}
+
+interface PartialValidationResult {
+  placeholder: string;
+  status: 'COMPLETE' | 'INCOMPLETE';
+  errors: ValidationError[];
+  progress: number;
+}
+UI Integration:
+
+typescript
+// components/assembly/AssetMappingPanel.tsx
+
+const validator = useRef(new IncrementalValidator());
+
+useEffect(() => {
+  validator.current.onUpdate((result) => {
+    // Update UI real-time
+    setValidationState(prev => ({
+      ...prev,
+      [result.placeholder]: result
+    }));
+    
+    setProgress(result.progress);
+  });
+}, []);
+
+const handleAssetDrop = async (placeholder: string, file: File) => {
+  const processed = await AssetProcessor.process(file, detectType(file));
+  await validator.current.updateMapping(placeholder, processed);
+};
+4. UNDO/REDO SYSTEM (Command Pattern)
+Problem
+User mapuje 50 assetów → pomyłka → musi zacząć od nowa.
+
+Rozwiązanie: Command Stack
+typescript
+// services/assembly/commandStack.ts
+
+interface Command {
+  execute(): Promise<void>;
+  undo(): Promise<void>;
+  description: string;
+}
+
+export class CommandStack {
+  
+  private stack: Command[] = [];
+  private pointer: number = -1;
+  
+  async execute(command: Command) {
+    // Remove future commands if we're in the middle of history
+    this.stack = this.stack.slice(0, this.pointer + 1);
+    
+    await command.execute();
+    
+    this.stack.push(command);
+    this.pointer++;
+  }
+  
+  async undo() {
+    if (!this.canUndo()) return;
+    
+    await this.stack[this.pointer].undo();
+    this.pointer--;
+  }
+  
+  async redo() {
+    if (!this.canRedo()) return;
+    
+    this.pointer++;
+    await this.stack[this.pointer].execute();
+  }
+  
+  canUndo(): boolean {
+    return this.pointer >= 0;
+  }
+  
+  canRedo(): boolean {
+    return this.pointer < this.stack.length - 1;
+  }
+  
+  getHistory(): string[] {
+    return this.stack.map(c => c.description);
+  }
+}
+
+// Example: MapAssetCommand
+export class MapAssetCommand implements Command {
+  
+  constructor(
+    private placeholder: string,
+    private newAsset: ProcessedAsset | null,
+    private oldAsset: ProcessedAsset | null,
+    private mappings: Map<string, PlaceholderMapping>
+  ) {}
+  
+  async execute() {
+    const mapping = this.mappings.get(this.placeholder);
+    if (mapping) {
+      mapping.asset = this.newAsset;
+      mapping.resolved = this.newAsset !== null;
+    }
+  }
+  
+  async undo() {
+    const mapping = this.mappings.get(this.placeholder);
+    if (mapping) {
+      mapping.asset = this.oldAsset;
+      mapping.resolved = this.oldAsset !== null;
+    }
+  }
+  
+  get description(): string {
+    return `Map ${this.newAsset?.originalPath || 'null'} to ${this.placeholder}`;
+  }
+}
+UI:
+
+tsx
+<div className="flex gap-2">
+  <button 
+    onClick={() => commandStack.undo()}
+    disabled={!commandStack.canUndo()}
+    className="p-2 bg-slate-800 rounded-xl"
+  >
+    <Undo size={16} />
+  </button>
+  <button 
+    onClick={() => commandStack.redo()}
+    disabled={!commandStack.canRedo()}
+    className="p-2 bg-slate-800 rounded-xl"
+  >
+    <Redo size={16} />
+  </button>
+  
+  {/* History dropdown */}
+  <select className="text-xs bg-slate-800 rounded-xl px-3">
+    {commandStack.getHistory().map((desc, i) => (
+      <option key={i}>{desc}</option>
+    ))}
+  </select>
+</div>
+5. BATCH OPERATIONS (Mass Actions)
+Problem
+50 kart HTML → wszystkie w tym samym folderze → mapowanie 1-by-1 = nightmare.
+
+Rozwiązanie: Smart Batch Mapper
+typescript
+// services/assembly/batchMapper.ts
+
+export class BatchMapper {
+  
+  // Auto-map by naming convention
+  static autoMapByNaming(
+    placeholders: PlaceholderMapping[],
+    assets: File[]
+  ): Map<string, File> {
+    
+    const mappings = new Map<string, File>();
+    
+    for (const placeholder of placeholders) {
+      // Extract semantic parts
+      // {{WORKCARD_DAY_01}} → "workcard", "day", "01"
+      const parts = this.parsePlaceholder(placeholder.placeholder);
+      
+      // Find best matching file
+      const match = assets.find(file => {
+        const fileName = file.name.toLowerCase();
+        return parts.every(part => fileName.includes(part));
+      });
+      
+      if (match) {
+        mappings.set(placeholder.placeholder, match);
+      }
+    }
+    
+    return mappings;
+  }
+  
+  // Bulk upload folder
+  static async uploadFolder(
+    folderInput: HTMLInputElement
+  ): Promise<Map<string, File>> {
+    
+    const files = Array.from(folderInput.files || []);
+    const organized = new Map<string, File>();
+    
+    files.forEach(file => {
+      // Preserve folder structure
+      const path = file.webkitRelativePath || file.name;
+      organized.set(path, file);
+    });
+    
+    return organized;
+  }
+  
+  // Pattern-based mapping
+  static mapByPattern(
+    placeholders: PlaceholderMapping[],
+    assets: File[],
+    pattern: string // e.g., "workcard_{day}.html"
+  ): Map<string, File> {
+    
+    const mappings = new Map<string, File>();
+    
+    // Convert pattern to regex
+    const regex = new RegExp(
+      pattern.replace(/\{(\w+)\}/g, '(?<$1>\\w+)')
+    );
+    
+    for (const asset of assets) {
+      const match = asset.name.match(regex);
+      if (!match || !match.groups) continue;
+      
+      // Find placeholder with matching groups
+      const placeholder = placeholders.find(p => {
+        const pGroups = this.parsePlaceholder(p.placeholder);
+        return Object.values(match.groups!).every(v => 
+          pGroups.includes(v.toLowerCase())
+        );
+      });
+      
+      if (placeholder) {
+        mappings.set(placeholder.placeholder, asset);
+      }
+    }
+    
+    return mappings;
+  }
+  
+  private static parsePlaceholder(placeholder: string): string[] {
+    // {{WORKCARD_DAY_01}} → ["workcard", "day", "01"]
+    return placeholder
+      .replace(/[{}]/g, '')
+      .toLowerCase()
+      .split(/[_\s-]+/)
+      .filter(Boolean);
+  }
+}
+UI:
+
+tsx
+<div className="bg-slate-900 p-8 rounded-3xl">
+  <h3 className="text-xs font-black uppercase mb-6">Batch Operations</h3>
+  
+  <div className="space-y-4">
+    <button onClick={handleAutoMap} className="w-full py-4 bg-amber-500 rounded-xl">
+      <Zap size={16} className="inline mr-2" />
+      Auto-Map by Naming
+    </button>
+    
+    <input 
+      type="file" 
+      webkitdirectory="" 
+      directory=""
+      ref={folderInputRef}
+      className="hidden"
+      onChange={handleFolderUpload}
+    />
+    <button onClick={() => folderInputRef.current?.click()} className="w-full py-4 bg-slate-800 rounded-xl">
+      <FolderPlus size={16} className="inline mr-2" />
+      Upload Entire Folder
+    </button>
+    
+    <div>
+      <label className="text-xs text-slate-500 block mb-2">Naming Pattern</label>
+      <input 
+        className="w-full bg-slate-800 rounded-xl px-4 py-3 text-sm"
+        placeholder="workcard_{day}.html"
+        value={pattern}
+        onChange={e => setPattern(e.target.value)}
+      />
+      <button onClick={handlePatternMap} className="w-full mt-2 py-3 bg-slate-800 rounded-xl text-xs">
+        Apply Pattern
+      </button>
+    </div>
+  </div>
+</div>
+6. EXPORT PRESETS (Template-based Export)
+Problem
+User eksportuje do różnych kanałów: Kindle, Apple Books, Web, PDF print.
+
+Rozwiązanie: Export Profile System
+typescript
+// services/assembly/exportProfiles.ts
+
+export interface ExportProfile {
+  id: string;
+  name: string;
+  description: string;
+  format: 'html' | 'epub' | 'pdf';
+  config: {
+    pageSize?: 'A4' | 'A5' | 'US-Letter' | 'Kindle' | 'iPad';
+    margins?: { top: number; right: number; bottom: number; left: number };
+    fontSize?: number;
+    lineHeight?: number;
+    fontFamily?: string;
+    colorMode?: 'color' | 'grayscale' | 'bw';
+    compression?: 'none' | 'standard' | 'maximum';
+    includeCSS?: boolean;
+    includeJS?: boolean;
+    embedFonts?: boolean;
+    optimizeImages?: boolean;
+    accessibility?: boolean;
+  };
+}
+
+export const EXPORT_PROFILES: ExportProfile[] = [
+  {
+    id: 'kindle-standard',
+    name: 'Kindle Standard',
+    description: 'Optimized for Kindle devices and apps',
+    format: 'epub',
+    config: {
+      pageSize: 'Kindle',
+      fontSize: 16,
+      lineHeight: 1.5,
+      colorMode: 'grayscale',
+      compression: 'maximum',
+      embedFonts: false,
+      optimizeImages: true,
+      accessibility: true
+    }
+  },
+  {
+    id: 'apple-books',
+    name: 'Apple Books',
+    description: 'For iBooks/Apple Books store',
+    format: 'epub',
+    config: {
+      pageSize: 'iPad',
+      fontSize: 18,
+      lineHeight: 1.6,
+      colorMode: 'color',
+      compression: 'standard',
+      embedFonts: true,
+      optimizeImages: true,
+      accessibility: true
+    }
+  },
+  {
+    id: 'web-interactive',
+    name: 'Web Interactive',
+    description: 'Full HTML with JavaScript interactions',
+    format: 'html',
+    config: {
+      includeCSS: true,
+      includeJS: true,
+      compression: 'none',
+      optimizeImages: false,
+      accessibility: true
+    }
+  },
+  {
+    id: 'print-ready-a4',
+    name: 'Print Ready (A4)',
+    description: 'High-quality PDF for professional printing',
+    format: 'pdf',
+    config: {
+      pageSize: 'A4',
+      margins: { top: 20, right: 15, bottom: 20, left: 15 },
+      fontSize: 12,
+      lineHeight: 1.4,
+      colorMode: 'color',
+      compression: 'none',
+      embedFonts: true,
+      optimizeImages: false
+    }
+  },
+  {
+    id: 'therapy-workbook',
+    name: 'Therapy Workbook',
+    description: 'Interactive PDF with form fields preserved',
+    format: 'pdf',
+    config: {
+      pageSize: 'A4',
+      margins: { top: 25, right: 20, bottom: 25, left: 20 },
+      fontSize: 14,
+      lineHeight: 1.6,
+      colorMode: 'color',
+      compression: 'standard',
+      embedFonts: true,
+      optimizeImages: true,
+      accessibility: true
+    }
+  }
+];
+Enhanced Export Engine:
+
+typescript
+// exportEngine.ts (extended)
+
+export class ExportEngine {
+  
+  static async exportWithProfile(
+    manifest: AssemblyManifest,
+    assembledContent: string,
+    assets: ProcessedAsset[],
+    profileId: string
+  ): Promise<ExportResult> {
+    
+    const profile = EXPORT_PROFILES.find(p => p.id === profileId);
+    if (!profile) throw new Error('Profile not found');
+    
+    // Apply profile transformations
+    const transformed = await this.applyProfileTransforms(
+      assembledContent,
+      assets,
+      profile
+    );
+    
+    // Export based on format
+    switch (profile.format) {
+      case 'html':
+        return this.exportHTML(manifest, transformed, assets);
+      case 'epub':
+        return this.exportEPUB(manifest, transformed, assets, profile.config);
+      case 'pdf':
+        return this.exportPDF(manifest, transformed, profile.config);
+    }
+  }
+  
+  private static async applyProfileTransforms(
+    content: string,
+    assets: ProcessedAsset[],
+    profile: ExportProfile
+  ): Promise<string> {
+    
+    let transformed = content;
+    
+    // Font size adjustment
+    if (profile.config.fontSize) {
+      transformed = transformed.replace(
+        /<body/,
+        `<body style="font-size: ${profile.config.fontSize}px; line-height: ${profile.config.lineHeight}"`
+      );
+    }
+    
+    // Color mode conversion
+    if (profile.config.colorMode === 'grayscale') {
+      transformed = transformed.replace(
+        /<style>/,
+        '<style>* { filter: grayscale(100%); }'
+      );
+    }
+    
+    // Image optimization
+    if (profile.config.optimizeImages) {
+      for (const asset of assets.filter(a => a.type === 'raster')) {
+        const optimized = await this.optimizeImage(asset, profile);
+        transformed = transformed.replaceAll(asset.processedURL, optimized.processedURL);
+      }
+    }
+    
+    // Accessibility enhancements
+    if (profile.config.accessibility) {
+      transformed = this.addAccessibilityAttributes(transformed);
+    }
+    
+    return transformed;
+  }
+  
+  private static addAccessibilityAttributes(html: string): string {
+    // Add ARIA labels, semantic HTML, etc.
+    return html
+      .replace(/<img/g, '<img role="img"')
+      .replace(/<button/g, '<button role="button"')
+      .replace(/<input/g, '<input aria-required="false"');
+  }
+}
+UI:
+
+tsx
+<div className="grid grid-cols-2 gap-6">
+  {EXPORT_PROFILES.map(profile => (
+    <div 
+      key={profile.id}
+      onClick={() => setSelectedProfile(profile)}
+      className={`p-8 rounded-3xl border-2 cursor-pointer transition-all ${
+        selectedProfile?.id === profile.id 
+          ? 'border-amber-500 bg-amber-500/10' 
+          : 'border-slate-700 hover:border-slate-600'
+      }`}
+    >
+      <h4 className="font-black text-lg mb-2">{profile.name}</h4>
+      <p className="text-xs text-slate-500 mb-4">{profile.description}</p>
+      <div className="flex gap-2 text-[10px]">
+        <span className="px-3 py-1 bg-slate-800 rounded-full">{profile.format.toUpperCase()}</span>
+        <span className="px-3 py-1 bg-slate-800 rounded-full">{profile.config.pageSize || 'Responsive'}</span>
+      </div>
+    </div>
+  ))}
+</div>
+
+<button 
+  onClick={() => handleExport(selectedProfile!.id)}
+  disabled={!selectedProfile}
+  className="w-full mt-8 py-6 bg-amber-500 rounded-3xl font-black text-lg uppercase"
+>
+  Export as {selectedProfile?.name}
+</button>
+7. VERSION CONTROL & SNAPSHOTS
+Problem
+User iteruje nad projektem → chce wrócić do wcześniejszej wersji.
+
+Rozwiązanie: Project Snapshots
+typescript
+// services/assembly/snapshotManager.ts
+
+interface ProjectSnapshot {
+  id: string;
+  timestamp: string;
+  manifest: AssemblyManifest;
+  mappings: Map<string, ProcessedAsset>;
+  metadata: {
+    description?: string;
+    autoSave: boolean;
+  };
+}
+
+export class SnapshotManager {
+  
+  private static STORAGE_PREFIX = 'dtr_snapshot:';
+  
+  // Create snapshot
+  static async createSnapshot(
+    manifest: AssemblyManifest,
+    mappings: Map<string, ProcessedAsset>,
+    description?: string
+  ): Promise<string> {
+    
+    const snapshot: ProjectSnapshot = {
+      id: `snap_${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      manifest,
+      mappings,
+      metadata: {
+        description,
+        autoSave: !description // Auto-save if no description provided
+      }
+    };
+    
+    // Serialize mappings (convert to plain object)
+    const serialized = {
+      ...snapshot,
+      mappings: Array.from(snapshot.mappings.entries())
+    };
+    
+    // Save to storage
+    await window.storage.set(
+      this.STORAGE_PREFIX + snapshot.id,
+      JSON.stringify(serialized),
+      false // personal data
+    );
+    
+    return snapshot.id;
+  }
+  
+  // Load snapshot
+  static async loadSnapshot(id: string): Promise<ProjectSnapshot | null> {
+    try {
+      const result = await window.storage.get(this.STORAGE_PREFIX + id);
+      if (!result) return null;
+      
+      const data = JSON.parse(result.value);
+      
+      // Reconstruct Map
+      return {
+        ...data,
+        mappings: new Map(data.mappings)
+      };
+    } catch {
+      return null;
+    }
+  }
+  
+  // List all snapshots for project
+Continue
+
+19 sty
+static async listSnapshots(manifestTitle: string): Promise<ProjectSnapshot[]> {
+const keys = await window.storage.list(this.STORAGE_PREFIX);
+if (!keys) return [];
+
+const snapshots = await Promise.all(
+  keys.keys.map(key => this.loadSnapshot(key.replace(this.STORAGE_PREFIX, '')))
+);
+
+return snapshots
+  .filter((s): s is ProjectSnapshot => s !== null)
+  .filter(s => s.manifest.metadata.title === manifestTitle)
+  .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+}
+
+// Auto-save (throttled) static async autoSave( manifest: AssemblyManifest, mappings: Map<string, ProcessedAsset> ): Promise<void> {
+
+// Delete old auto-saves (keep last 5)
+const existing = await this.listSnapshots(manifest.metadata.title);
+const autoSaves = existing.filter(s => s.metadata.autoSave);
+
+if (autoSaves.length >= 5) {
+  await window.storage.delete(
+    this.STORAGE_PREFIX + autoSaves[autoSaves.length - 1].id
+  );
+}
+
+await this.createSnapshot(manifest, mappings);
+}
+}
+
+
+**UI:**
+```tsx
+<div className="bg-slate-900 p-6 rounded-3xl">
+  <div className="flex justify-between items-center mb-6">
+    <h3 className="text-xs font-black uppercase">Version History</h3>
+    <button onClick={handleCreateSnapshot} className="text-amber-500 text-xs">
+      + New Snapshot
+    </button>
+  </div>
+  
+  <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
+    {snapshots.map(snap => (
+      <div 
+        key={snap.id}
+        onClick={() => handleLoadSnapshot(snap.id)}
+        className="p-4 bg-slate-800/50 rounded-2xl cursor-pointer hover:bg-slate-800 transition-all"
+      >
+        <div className="flex justify-between items-start mb-2">
+          <span className="text-xs font-black text-white">
+            {snap.metadata.description || 'Auto-save'}
+          </span>
+          {snap.metadata.autoSave && (
+            <History size={12} className="text-slate-600" />
+          )}
+        </div>
+        <span className="text-[10px] text-slate-500">
+          {new Date(snap.timestamp).toLocaleString()}
+        </span>
+      </div>
+    ))}
+  </div>
+</div>
+```
+
+---
+
+## 8. COLLABORATION FEATURES (Optional, ale killer)
+
+### Problem
+Terapeuci współpracują z grafikami/edytorami.
+
+### Rozwiązanie: Shared Projects
+```typescript
+// types/assembly.types.ts (extended)
+
+export interface CollaborationSession {
+  projectId: string;
+  owner: string;
+  collaborators: Array<{
+    id: string;
+    role: 'editor' | 'viewer' | 'reviewer';
+    joinedAt: string;
+  }>;
+  sharedAt: string;
+}
+
+// services/assembly/collaborationService.ts
+
+export class CollaborationService {
+  
+  // Share project
+  static async shareProject(
+    manifest: AssemblyManifest,
+    mappings: Map<string, ProcessedAsset>
+  ): Promise<string> {
+    
+    const projectId = `proj_${Date.now()}`;
+    
+    // Save to shared storage
+    await window.storage.set(
+      `project:${projectId}:manifest`,
+      JSON.stringify(manifest),
+      true // shared = true
+    );
+    
+    await window.storage.set(
+      `project:${projectId}:mappings`,
+      JSON.stringify(Array.from(mappings.entries())),
+      true
+    );
+    
+    // Generate share URL
+    const shareUrl = `${window.location.origin}?project=${projectId}`;
+    
+    return shareUrl;
+  }
+  
+  // Load shared project
+  static async loadSharedProject(projectId: string): Promise<{
+    manifest: AssemblyManifest;
+    mappings: Map<string, ProcessedAsset>;
+  } | null> {
+    
+    try {
+      const manifestResult = await window.storage.get(`project:${projectId}:manifest`, true);
+      const mappingsResult = await window.storage.get(`project:${projectId}:mappings`, true);
+      
+      if (!manifestResult || !mappingsResult) return null;
+      
+      return {
+        manifest: JSON.parse(manifestResult.value),
+        mappings: new Map(JSON.parse(mappingsResult.value))
+      };
+    } catch {
+      return null;
+    }
+  }
+  
+  // Add comment to specific section
+  static async addComment(
+    projectId: string,
+    sectionId: string,
+    comment: string,
+    author: string
+  ): Promise<void> {
+    
+    const key = `project:${projectId}:comments:${sectionId}`;
+    const existing = await window.storage.get(key, true);
+    
+    const comments = existing ? JSON.parse(existing.value) : [];
+    comments.push({
+      id: `comment_${Date.now()}`,
+      text: comment,
+      author,
+      timestamp: new Date().toISOString()
+    });
+    
+    await window.storage.set(key, JSON.stringify(comments), true);
+  }
+}
+```
+
+**UI:**
+```tsx
+<div className="bg-slate-900 p-6 rounded-3xl">
+  <h3 className="text-xs font-black uppercase mb-4">Share Project</h3>
+  
+  <button 
+    onClick={handleShare}
+    className="w-full py-4 bg-amber-500 rounded-xl mb-4"
+  >
+    <ExternalLink size={16} className="inline mr-2" />
+    Generate Share Link
+  </button>
+  
+  {shareUrl && (
+    <div className="p-4 bg-slate-800 rounded-xl">
+      <input 
+        readOnly
+        value={shareUrl}
+        className="w-full bg-transparent text-xs text-amber-500 outline-none"
+        onClick={(e) => e.currentTarget.select()}
+      />
+      <button 
+        onClick={() => navigator.clipboard.writeText(shareUrl)}
+        className="mt-2 text-[10px] text-slate-500 hover:text-white"
+      >
+        Copy to Clipboard
+      </button>
+    </div>
+  )}
+  
+  <div className="mt-6 pt-6 border-t border-slate-800">
+    <h4 className="text-[10px] font-black uppercase text-slate-500 mb-3">Active Collaborators</h4>
+    {/* List collaborators */}
+  </div>
+</div>
+```
+
+---
+
+## 9. PERFORMANCE MONITORING
+```typescript
+// services/monitoring/performanceMonitor.ts
+
+export class PerformanceMonitor {
+  
+  private static metrics: Map<string, number[]> = new Map();
+  
+  static measure<T>(operation: string, fn: () => T | Promise<T>): T | Promise<T> {
+    const start = performance.now();
+    
+    const result = fn();
+    
+    if (result instanceof Promise) {
+      return result.finally(() => {
+        this.recordMetric(operation, performance.now() - start);
+      }) as Promise<T>;
+    } else {
+      this.recordMetric(operation, performance.now() - start);
+      return result;
+    }
+  }
+  
+  private static recordMetric(operation: string, duration: number) {
+    if (!this.metrics.has(operation)) {
+      this.metrics.set(operation, []);
+    }
+    this.metrics.get(operation)!.push(duration);
+    
+    // Keep last 100 measurements
+    if (this.metrics.get(operation)!.length > 100) {
+      this.metrics.get(operation)!.shift();
+    }
+  }
+  
+  static getStats(operation: string) {
+    const measurements = this.metrics.get(operation) || [];
+    if (measurements.length === 0) return null;
+    
+    const sorted = [...measurements].sort((a, b) => a - b);
+    return {
+      min: sorted[0],
+      max: sorted[sorted.length - 1],
+      avg: measurements.reduce((a, b) => a + b) / measurements.length,
+      p50: sorted[Math.floor(sorted.length * 0.5)],
+      p95: sorted[Math.floor(sorted.length * 0.95)],
+      count: measurements.length
+    };
+  }
+  
+  static getAllStats() {
+    return Array.from(this.metrics.keys()).map(op => ({
+      operation: op,
+      ...this.getStats(op)
+    }));
+  }
+}
+
+// Usage
+const manifest = await PerformanceMonitor.measure(
+  'manifest_parse',
+  () => ManifestService.parseManifest(file)
+);
+```
+
+---
+
+## 10. FINAL ARCHITECTURE DIAGRAM
+┌─────────────────────────────────────────────────────────────────┐
+│                        DTR STUDIO ENGINE v2.0                    │
+│                        ASSEMBLY-FIRST ARCHITECTURE               │
+└─────────────────────────────────────────────────────────────────┘
+
+┌──────────────┐
+│  MODE SELECT │
+└──────┬───────┘
+│
+├─────────────────────┬─────────────────────┐
+│                     │                     │
+v                     v                     v
+┌─────────────┐      ┌─────────────┐      ┌──────────────┐
+│  ASSEMBLY   │      │   STUDIO    │      │ SHARED CORE  │
+│    MODE     │      │    MODE     │      │   SERVICES   │
+└─────────────┘      └─────────────┘      └──────────────┘
+│                     │                     │
+│                     │                     │
+┌──────┴──────┐      ┌───────┴──────┐      ┌──────┴────────┐
+│  Manifest   │      │  Manuscript  │      │  Storage API  │
+│  Service    │      │  Ingest      │      │               │
+├─────────────┤      ├──────────────┤      ├───────────────┤
+│  Asset      │      │  AI Layout   │      │  Worker Pool  │
+│  Processor  │      │  Orchestr.   │      │               │
+├─────────────┤      ├──────────────┤      ├───────────────┤
+│  Placeholder│      │  Visual DNA  │      │  Command      │
+│  Parser     │      │  Matrix      │      │  Stack        │
+├─────────────┤      ├──────────────┤      ├───────────────┤
+│  Incremental│      │  Typography  │      │  Snapshot     │
+│  Validator  │      │  Engine      │      │  Manager      │
+├─────────────┤      ├──────────────┤      ├───────────────┤
+│  Batch      │      │  Asset       │      │  Export       │
+│  Mapper     │      │  Config      │      │  Profiles     │
+├─────────────┤      ├──────────────┤      ├───────────────┤
+│  HTML       │      │  Preflight   │      │  Security     │
+│  Sanitizer  │      │  Proofing    │      │  Sandbox      │
+└─────────────┘      └──────────────┘      └───────────────┘
+│                     │                     │
+└─────────────────────┴─────────────────────┘
+│
+v
+┌────────────────┐
+│  EXPORT ENGINE │
+├────────────────┤
+│  HTML Worker   │
+│  EPUB Worker   │
+│  PDF Worker    │
+└────────────────┘
+│
+v
+┌────────────────┐
+│  FINAL OUTPUT  │
+│  • ebook.html  │
+│  • ebook.epub  │
+│  • ebook.pdf   │
+└────────────────┘
+
+
+---
+
+## NASTĘPNE KROKI
+
+Teraz możemy:
+
+1. **Implementować kod** → zaczynamy od którego modułu?
+2. **Zrobić mockupy UI** → pokażę Ci wizualizację Assembly Mode
+3. **Napisać dokumentację techniczną** → dla devów
+4. **Przygotować example manifests** → workbook terapeutyczny, kurs online
+5. **Zdefiniować API contracts** → jeśli planujesz backend
+
+**Co teraz?**
+3
+
+19 sty
+DTR STUDIO ENGINE v2.0 – DOKUMENTACJA TECHNICZNA
+SPIS TREŚCI
+Wprowadzenie
+Architektura Systemu
+Manifest Specification
+Core Services API
+Security & Sandboxing
+Workflow Guides
+Performance Guidelines
+Testing Strategy
+Deployment
+Troubleshooting
+1. WPROWADZENIE
+1.1 Czym jest DTR Studio Engine?
+DTR Studio Engine v2.0 to silnik składu i publikacji ebooków interaktywnych z architekturą Assembly-First. System umożliwia deterministyczne łączenie treści, kart pracy HTML, multimediów i zasobów graficznych w kompletne publikacje cyfrowe.
+
+Kluczowe cechy:
+
+Zero ingerencji AI w treść autorską
+Manifest-driven assembly (pełna kontrola)
+Sandboxed HTML injection (bezpieczeństwo)
+Multi-format export (HTML/EPUB/PDF)
+Real-time validation
+Batch operations
+1.2 Dla kogo?
+Grupa użytkowników	Use case	Tryb
+Terapeuci	30-dniowe workbooki z kartami ćwiczeń	Assembly
+Edukatorzy	Kursy online z interaktywnymi lekcjami	Assembly
+Autorzy	Ebooki z materiałami dodatkowymi	Assembly
+Designerzy	Portfolia, magazyny, publikacje wizualne	Studio
+Wydawcy	Print-ready książki z DTP	Studio
+1.3 Terminologia
+Termin	Definicja
+Manifest	Plik JSON definiujący strukturę projektu i mapowania assetów
+Placeholder	Znacznik {{NAZWA}} w tekście, który zostanie zastąpiony assetem
+Asset	Zasób: obraz, HTML, audio, video
+Assembly	Proces łączenia manifestu z assetami w finalną publikację
+Workcard	Interaktywna karta HTML (formularz, quiz, ćwiczenie)
+DNA Template	Preset wizualny (typografia, layout, kolory)
+Sandbox	Izolowane środowisko wykonania user-generated HTML
+2. ARCHITEKTURA SYSTEMU
+2.1 Separacja Trybów (Dual-Mode Architecture)
+typescript
+enum WorkflowMode {
+  ASSEMBLY = 'assembly',  // Manifest-driven, zero AI content
+  STUDIO = 'studio'       // AI-powered layout orchestration
+}
+```
+
+**ASSEMBLY MODE:**
+- Input: `manifest.json` + assets
+- Process: Deterministyczny mapping + validation
+- AI: Tylko opcjonalna walidacja (nie modyfikuje content)
+- Output: Atomic export (HTML/EPUB/PDF)
+
+**STUDIO MODE:**
+- Input: Manuscript (DOCX/MD/TXT)
+- Process: AI analiza → layout generation → visual orchestration
+- AI: Gemini dla strukturyzacji + typography
+- Output: Print-ready DTP
+
+### 2.2 Warstwy Systemu (Layers)
+```
+┌─────────────────────────────────────────┐
+│         PRESENTATION LAYER              │  React UI, Components
+├─────────────────────────────────────────┤
+│         APPLICATION LAYER               │  Workflows, State Management
+├─────────────────────────────────────────┤
+│         BUSINESS LOGIC LAYER            │  Services, Processors, Validators
+├─────────────────────────────────────────┤
+│         DATA ACCESS LAYER               │  Storage API, File I/O
+├─────────────────────────────────────────┤
+│         INFRASTRUCTURE LAYER            │  Workers, Security, Monitoring
+└─────────────────────────────────────────┘
+```
+
+### 2.3 Struktura Plików (File Tree)
+```
+src/
+├── modes/                      # Workflow implementations
+│   ├── assembly/
+│   │   ├── AssemblyWorkflow.tsx
+│   │   ├── ManifestUpload.tsx
+│   │   ├── AssetMapper.tsx
+│   │   ├── ValidationDashboard.tsx
+│   │   └── AssemblyPreview.tsx
+│   └── studio/
+│       ├── StudioWorkflow.tsx
+│       ├── ManuscriptIngest.tsx
+│       └── PreflightProofing.tsx
+│
+├── services/
+│   ├── assembly/               # Assembly-specific services
+│   │   ├── manifestService.ts
+│   │   ├── placeholderParser.ts
+│   │   ├── assetProcessor.ts
+│   │   ├── assetInjector.ts
+│   │   ├── assemblyValidator.ts
+│   │   ├── batchMapper.ts
+│   │   ├── htmlSanitizer.ts
+│   │   ├── exportEngine.ts
+│   │   ├── exportProfiles.ts
+│   │   ├── snapshotManager.ts
+│   │   ├── collaborationService.ts
+│   │   └── incrementalValidator.ts
+│   │
+│   ├── studio/                 # Studio-specific services
+│   │   ├── geminiService.ts
+│   │   ├── metadataService.ts
+│   │   └── qrService.ts
+│   │
+│   ├── shared/                 # Cross-mode utilities
+│   │   ├── storageService.ts
+│   │   ├── workerPool.ts
+│   │   └── commandStack.ts
+│   │
+│   └── monitoring/
+│       └── performanceMonitor.ts
+│
+├── workers/                    # Web Workers (off-main-thread)
+│   ├── pdf.worker.ts
+│   ├── epub.worker.ts
+│   └── validation.worker.ts
+│
+├── types/
+│   ├── assembly.types.ts
+│   ├── studio.types.ts
+│   └── shared.types.ts
+│
+├── components/
+│   ├── shared/
+│   │   ├── ModeSelector.tsx
+│   │   ├── StepIndicator.tsx
+│   │   └── Sidebar.tsx
+│   └── assembly/
+│       ├── PlaceholderTree.tsx
+│       ├── AssetMappingPanel.tsx
+│       └── ValidationReport.tsx
+│
+├── schemas/
+│   └── manifest.schema.json    # JSON Schema for validation
+│
+└── App.tsx                     # Mode router
+3. MANIFEST SPECIFICATION
+3.1 Schema Overview
+Manifest to single source of truth dla Assembly Mode. Definiuje:
+
+Metadane publikacji
+Strukturę rozdziałów/sekcji
+Mapowanie placeholderów → assetów
+Globalne zasoby (CSS, fonty, JS)
+Konfigurację assembly
+3.2 Full Schema (manifest.schema.json)
+json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://dtr.studio/manifest.schema.json",
+  "title": "DTR Assembly Manifest v2.0",
+  "type": "object",
+  "required": ["version", "metadata", "sections"],
+  
+  "properties": {
+    
+    "version": {
+      "type": "string",
+      "enum": ["2.0"],
+      "description": "Manifest schema version"
+    },
+    
+    "metadata": {
+      "type": "object",
+      "required": ["title", "author", "language"],
+      "properties": {
+        "title": { 
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "author": { 
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "language": { 
+          "type": "string",
+          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "examples": ["en", "pl", "en-US"]
+        },
+        "isbn": {
+          "type": "string",
+          "pattern": "^(97(8|9))?\\d{9}(\\d|X)$"
+        },
+        "genre": { "type": "string" },
+        "description": { 
+          "type": "string",
+          "maxLength": 2000
+        },
+        "coverImage": { "type": "string" },
+        "publicationDate": { 
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "chapter", "title", "placeholders"],
+        "properties": {
+          
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-_]+$",
+            "description": "Unique section identifier"
+          },
+          
+          "chapter": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Chapter number (must be sequential)"
+          },
+          
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          
+          "placeholders": {
+            "type": "object",
+            "patternProperties": {
+              "^\\{\\{[A-Z0-9_]+\\}\\}$": {
+                "type": "string",
+                "description": "Path to asset file"
+              }
+            },
+            "additionalProperties": false
+          },
+          
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "wordCount": { "type": "integer" },
+              "duration": { "type": "integer" },
+              "interactivity": {
+                "enum": ["static", "interactive"]
+              },
+              "tags": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    
+    "assets": {
+      "type": "object",
+      "properties": {
+        "css": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Global CSS files"
+        },
+        "fonts": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Font files (WOFF2 recommended)"
+        },
+        "scripts": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Global JS files"
+        }
+      }
+    },
+    
+    "config": {
+      "type": "object",
+      "properties": {
+        "strict": {
+          "type": "boolean",
+          "default": true,
+          "description": "Fail assembly on missing assets?"
+        },
+        "inlineCSS": {
+          "type": "boolean",
+          "default": true,
+          "description": "Inline CSS vs external link"
+        },
+        "sandboxHTML": {
+          "type": "boolean",
+          "default": true,
+          "description": "Isolate workcard styles?"
+        },
+        "optimizeImages": {
+          "type": "boolean",
+          "default": true,
+          "description": "Compress images on export?"
+        },
+        "accessibility": {
+          "type": "boolean",
+          "default": true,
+          "description": "Add ARIA attributes?"
+        }
+      }
+    }
+  }
+}
+3.3 Example: Therapy Workbook Manifest
+json
+{
+  "$schema": "https://dtr.studio/manifest.schema.json",
+  "version": "2.0",
+  
+  "metadata": {
+    "title": "30-Day Mindfulness Therapy Workbook",
+    "author": "Dr. Anna Kowalska",
+    "language": "pl",
+    "isbn": "9788312345678",
+    "genre": "Self-help / Psychology",
+    "description": "Kompleksowy program terapii mindfulness z interaktywnymi ćwiczeniami dziennymi.",
+    "coverImage": "assets/cover.jpg",
+    "publicationDate": "2025-02-01"
+  },
+  
+  "sections": [
+    {
+      "id": "day-01",
+      "chapter": 1,
+      "title": "Dzień 1: Świadomy Oddech",
+      "placeholders": {
+        "{{WORKCARD_01}}": "workcards/day01_breathing.html",
+        "{{AUDIO_01}}": "audio/meditation_breathing.mp3",
+        "{{IMAGE_01}}": "images/nature_calm.jpg"
+      },
+      "metadata": {
+        "duration": 15,
+        "interactivity": "interactive",
+        "tags": ["oddech", "podstawy", "mindfulness"]
+      }
+    },
+    {
+      "id": "day-02",
+      "chapter": 2,
+      "title": "Dzień 2: Skanowanie Ciała",
+      "placeholders": {
+        "{{WORKCARD_02}}": "workcards/day02_bodyscan.html",
+        "{{AUDIO_02}}": "audio/meditation_bodyscan.mp3",
+        "{{IMAGE_02}}": "images/body_awareness.jpg"
+      },
+      "metadata": {
+        "duration": 20,
+        "interactivity": "interactive",
+        "tags": ["ciało", "świadomość", "relaksacja"]
+      }
+    }
+    // ... days 3-30
+  ],
+  
+  "assets": {
+    "css": ["styles/workbook.css", "styles/forms.css"],
+    "fonts": ["fonts/Inter-Variable.woff2", "fonts/Crimson-Pro.woff2"],
+    "scripts": ["scripts/form-validation.js"]
+  },
+  
+  "config": {
+    "strict": true,
+    "inlineCSS": true,
+    "sandboxHTML": true,
+    "optimizeImages": true,
+    "accessibility": true
+  }
+}
+3.4 Placeholder Naming Conventions
+Konwencja: {{TYPE_DESCRIPTOR_INDEX}}
+
+Type	Examples	Use case
+WORKCARD	{{WORKCARD_DAY_01}}	Interaktywne karty HTML
+AUDIO	{{AUDIO_MEDITATION_01}}	Pliki dźwiękowe
+IMAGE	{{IMAGE_NATURE_01}}	Obrazy, fotografie
+VIDEO	{{VIDEO_TUTORIAL_01}}	Multimedia wideo
+CHART	{{CHART_PROGRESS_01}}	Wykresy, diagramy
+QUIZ	{{QUIZ_KNOWLEDGE_01}}	Quizy, testy
+Best practices:
+
+Używaj UPPERCASE
+Separator: underscore _
+Numeracja: zawsze 2 cyfry (01, 02, ..., 99)
+Opisowe, ale zwięzłe
+4. CORE SERVICES API
+4.1 ManifestService
+typescript
+class ManifestService {
+  
+  /**
+   * Parse i walidacja manifestu
+   * @throws AssemblyError jeśli schema invalid
+   */
+  static async parseManifest(file: File): Promise<AssemblyManifest>
+  
+  /**
+   * Ekstrakcja wszystkich placeholderów
+   * @returns Array mapowań placeholder → type + path
+   */
+  static extractPlaceholders(manifest: AssemblyManifest): PlaceholderMapping[]
+  
+  /**
+   * Walidacja struktury (bez AI)
+   * Sprawdza: kolejność chapters, duplikaty, ścieżki
+   */
+  static validateStructure(manifest: AssemblyManifest): ValidationError[]
+  
+  /**
+   * Detekcja typu assetu z rozszerzenia
+   */
+  private static detectAssetType(path: string): AssetType
+}
+Usage:
+
+typescript
+try {
+  const manifest = await ManifestService.parseManifest(manifestFile);
+  const placeholders = ManifestService.extractPlaceholders(manifest);
+  const errors = ManifestService.validateStructure(manifest);
+  
+  if (errors.length > 0) {
+    console.error('Validation errors:', errors);
+  }
+} catch (e) {
+  if (e instanceof AssemblyError) {
+    showErrorModal(e.message);
+  }
+}
+4.2 AssetProcessor
+typescript
+class AssetProcessor {
+  
+  /**
+   * Przetwarza uploaded file → ProcessedAsset
+   * Wykonuje: sanitization, optimization, checksum
+   */
+  static async process(
+    file: File,
+    type: AssetType,
+    config: ProcessingConfig
+  ): Promise<ProcessedAsset>
+  
+  /**
+   * HTML: sanitize + extract CSS + wrap sandbox
+   */
+  private static async processHTML(
+    file: File, 
+    config: ProcessingConfig
+  ): Promise<ProcessedAsset>
+  
+  /**
+   * Image: resize + compress + convert format
+   */
+  private static async processImage(
+    file: File,
+    config: ProcessingConfig
+  ): Promise<ProcessedAsset>
+  
+  /**
+   * Audio: validate + optional normalization
+   */
+  private static async processAudio(
+    file: File,
+    config: ProcessingConfig
+  ): Promise<ProcessedAsset>
+  
+  /**
+   * Generuj SHA-256 checksum dla integrity
+   */
+  private static async generateChecksum(blob: Blob): Promise<string>
+}
+Processing Config:
+
+typescript
+interface ProcessingConfig {
+  // Image optimization
+  maxWidth?: number;        // Default: 1920
+  maxHeight?: number;       // Default: 1080
+  quality?: number;         // 0-1, default: 0.85
+  format?: 'image/webp' | 'image/jpeg' | 'image/png';
+  
+  // HTML sanitization
+  strict?: boolean;         // Default: true
+  allowedTags?: string[];
+  allowedAttrs?: string[];
+  
+  // Audio
+  normalize?: boolean;      // Volume normalization
+  trimSilence?: boolean;
+}
+4.3 PlaceholderParser
+typescript
+class PlaceholderParser {
+  
+  /**
+   * Wykryj wszystkie {{PLACEHOLDERS}} w tekście
+   * @returns Array unikalnych placeholderów
+   */
+  static detectInText(text: string): string[]
+  
+  /**
+   * Zamień placeholdery na rzeczywisty content
+   * @param text Tekst źródłowy z placeholderami
+   * @param mappings Map placeholder → ProcessedAsset
+   * @returns Tekst z wstrzykniętymi assetami
+   */
+  static async injectContent(
+    text: string,
+    mappings: Map<string, ProcessedAsset>
+  ): Promise<string>
+  
+  /**
+   * Generuj HTML replacement dla assetu
+   * Różne strategie w zależności od typu
+   */
+  private static async generateReplacement(
+    asset: ProcessedAsset
+  ): Promise<string>
+}
+Injection Templates:
+
+typescript
+// WORKCARD_HTML
+<section 
+  data-workcard-id="${asset.id}"
+  data-checksum="${asset.checksum}"
+  class="workcard-inject"
+  style="isolation: isolate;"
+>
+  ${sanitizedHTML}
+</section>
+
+// AUDIO
+<audio controls data-asset-id="${asset.id}" class="audio-inject">
+  <source src="${asset.processedURL}" type="audio/mpeg">
+</audio>
+
+// IMAGE
+<figure data-asset-id="${asset.id}" class="image-inject">
+  <img 
+    src="${asset.processedURL}" 
+    alt="Asset ${asset.id}"
+    loading="lazy"
+  />
+</figure>
+4.4 HTMLSanitizer
+typescript
+class HTMLSanitizer {
+  
+  /**
+   * Sanitize HTML przed injection
+   * Multi-layer security: pattern check + DOMPurify + sandboxing
+   * @throws AssemblyError on security violation
+   */
+  static sanitize(html: string, strict: boolean = true): string
+  
+  /**
+   * Wrap HTML w Shadow DOM dla CSS isolation
+   * Optional: dla max sandboxing
+   */
+  static wrapInShadowDOM(html: string, css: string): string
+  
+  /**
+   * Allowed tags (configurable)
+   */
+  private static ALLOWED_TAGS: string[]
+  
+  /**
+   * Forbidden patterns (XSS prevention)
+   */
+  private static FORBIDDEN_PATTERNS: RegExp[]
+}
+```
+
+**Security Layers:**
+```
+INPUT HTML
+    ↓
+[1] Pattern Matching (FORBIDDEN_PATTERNS)
+    ↓
+[2] DOMPurify Sanitization
+    ↓
+[3] Sandbox Wrapper (isolation: isolate)
+    ↓
+[4] Optional Shadow DOM
+    ↓
+SAFE HTML OUTPUT
+4.5 AssemblyValidator
+typescript
+class AssemblyValidator {
+  
+  /**
+   * AI-powered semantic validation
+   * WAŻNE: AI nie generuje contentu, tylko waliduje!
+   * @param useAI Optional, default: false (use local validation)
+   */
+  static async validateWithAI(
+    manifest: AssemblyManifest,
+    mappings: PlaceholderMapping[]
+  ): Promise<ValidationResult>
+  
+  /**
+   * Lokalna walidacja (bez AI, instant)
+   * Sprawdza: resolved status, type mismatches, size limits
+   */
+  static validateLocal(
+    mappings: PlaceholderMapping[]
+  ): ValidationResult
+}
+Validation Result:
+
+typescript
+interface ValidationResult {
+  status: 'COMPLETE' | 'INCOMPLETE' | 'ERROR';
+  total: number;
+  mapped: number;
+  missing: PlaceholderMapping[];
+  orphaned: string[];           // Files bez placeholderów
+  errors: ValidationError[];
+}
+
+interface ValidationError {
+  type: 'MISSING_ASSET' | 'INVALID_PATH' | 'UNSUPPORTED_TYPE';
+  placeholder: string;
+  message: string;
+  severity: 'ERROR' | 'WARNING';
+}
+4.6 BatchMapper
+typescript
+class BatchMapper {
+  
+  /**
+   * Auto-mapowanie przez naming convention
+   * {{WORKCARD_DAY_01}} → workcard_day_01.html
+   */
+  static autoMapByNaming(
+    placeholders: PlaceholderMapping[],
+    assets: File[]
+  ): Map<string, File>
+  
+  /**
+   * Upload całego folderu (preserve structure)
+   */
+  static async uploadFolder(
+    folderInput: HTMLInputElement
+  ): Promise<Map<string, File>>
+  
+  /**
+   * Pattern-based mapping
+   * Pattern: "workcard_{day}.html"
+   * Matches: {{WORKCARD_DAY_01}} → workcard_01.html
+   */
+  static mapByPattern(
+    placeholders: PlaceholderMapping[],
+    assets: File[],
+    pattern: string
+  ): Map<string, File>
+}
+4.7 ExportEngine
+typescript
+class ExportEngine {
+  
+  /**
+   * Export z predefined profile
+   */
+  static async exportWithProfile(
+    manifest: AssemblyManifest,
+    assembledContent: string,
+    assets: ProcessedAsset[],
+    profileId: string
+  ): Promise<ExportResult>
+  
+  /**
+   * Export do single HTML file
+   * Wszystkie CSS/JS inline, assets as base64 (optional)
+   */
+  static async exportHTML(
+    manifest: AssemblyManifest,
+    assembledContent: string,
+    assets: ProcessedAsset[]
+  ): Promise<ExportResult>
+  
+  /**
+   * Export do EPUB3 (via worker)
+   * Async processing off main thread
+   */
+  static async exportEPUB(
+    manifest: AssemblyManifest,
+    assembledContent: string,
+    assets: ProcessedAsset[],
+    config: EPUBConfig
+  ): Promise<ExportResult>
+  
+  /**
+   * Export do PDF (via worker)
+   * Heavy lifting → dedicated worker
+   */
+  static async exportPDF(
+    manifest: AssemblyManifest,
+    assembledContent: string,
+    config: PDFConfig
+  ): Promise<ExportResult>
+}
+Export Profiles:
+
+typescript
+const EXPORT_PROFILES = [
+  {
+    id: 'kindle-standard',
+    format: 'epub',
+    config: {
+      pageSize: 'Kindle',
+      colorMode: 'grayscale',
+      compression: 'maximum',
+      optimizeImages: true
+    }
+  },
+  {
+    id: 'print-ready-a4',
+    format: 'pdf',
+    config: {
+      pageSize: 'A4',
+      margins: { top: 20, right: 15, bottom: 20, left: 15 },
+      colorMode: 'color',
+      embedFonts: true
+    }
+  },
+  // ... więcej profili
+];
+4.8 SnapshotManager
+typescript
+class SnapshotManager {
+  
+  /**
+   * Utwórz snapshot projektu
+   * Zapisuje: manifest + mappings + metadata
+   */
+  static async createSnapshot(
+    manifest: AssemblyManifest,
+    mappings: Map<string, ProcessedAsset>,
+    description?: string
+  ): Promise<string>
+  
+  /**
+   * Załaduj snapshot
+   */
+  static async loadSnapshot(id: string): Promise<ProjectSnapshot | null>
+  
+  /**
+   * Lista wszystkich snapshotów dla projektu
+   */
+  static async listSnapshots(manifestTitle: string): Promise<ProjectSnapshot[]>
+  
+  /**
+   * Auto-save (throttled, max 5 auto-saves)
+   */
+  static async autoSave(
+    manifest: AssemblyManifest,
+    mappings: Map<string, ProcessedAsset>
+  ): Promise<void>
+}
+4.9 CollaborationService
+typescript
+class CollaborationService {
+  
+  /**
+   * Share projektu (zapisz do shared storage)
+   * @returns Share URL
+   */
+  static async shareProject(
+    manifest: AssemblyManifest,
+    mappings: Map<string, ProcessedAsset>
+  ): Promise<string>
+  
+  /**
+   * Załaduj shared project
+   */
+  static async loadSharedProject(projectId: string): Promise<{
+    manifest: AssemblyManifest;
+    mappings: Map<string, ProcessedAsset>;
+  } | null>
+  
+  /**
+   * Dodaj komentarz do sekcji
+   */
+  static async addComment(
+    projectId: string,
+    sectionId: string,
+    comment: string,
+    author: string
+  ): Promise<void>
+}
+```
+
+---
+
+## 5. SECURITY & SANDBOXING
+
+### 5.1 XSS Prevention Strategy
+
+**Threat model:**
+User wstrzykuje złośliwy HTML → XSS → kradzież danych / session hijacking.
+
+**Defense layers:**
+```
+USER HTML INPUT
+    ↓
+[1] FORBIDDEN PATTERN CHECK
+    - Regex dla: javascript:, on*, <script>, eval()
+    - Reject natychmiast
+    ↓
+[2] DOMPURIFY SANITIZATION
+    - Whitelist allowed tags/attrs
+    - Remove wszystkie event handlers
+    - Encode dangerous chars
+    ↓
+[3] SANDBOX WRAPPER
+    - CSS isolation: isolation: isolate
+    - Contain: layout style paint
+    - No script execution context
+    ↓
+[4] CONTENT SECURITY POLICY (CSP)
+    - script-src 'self'
+    - object-src 'none'
+    - frame-ancestors 'none'
+    ↓
+SAFE RENDERING
+5.2 Allowed vs Forbidden
+Allowed tags:
+
+typescript
+['div', 'span', 'p', 'h1-h6', 'ul', 'ol', 'li', 
+ 'table', 'tr', 'td', 'th', 'input', 'textarea', 
+ 'label', 'button', 'select', 'img', 'audio', 'video']
+Forbidden tags:
+
+typescript
+['script', 'iframe', 'object', 'embed', 'applet', 
+ 'link', 'style', 'meta', 'base']
+Forbidden attributes:
+
+typescript
+['onclick', 'onerror', 'onload', 'onmouseover', 
+ 'onfocus', 'onblur', ...]
+5.3 Shadow DOM Isolation (Optional)
+Dla max security, wrap w Shadow DOM:
+
+html
+<div class="shadow-host">
+  <template shadowrootmode="open">
+    <style>
+      :host { all: initial; display: block; }
+      /* Scoped CSS */
+    </style>
+    <!-- Workcard HTML -->
+  </template>
+</div>
+Benefits:
+
+CSS nie leakuje na zewnątrz
+External CSS nie wpływa na workcard
+JS nie może dostać się do parent DOM
+6. WORKFLOW GUIDES
+6.1 Assembly Mode – Complete Workflow
+┌─────────────────────────────────────┐
+│  1. CREATE MANIFEST                 │
+│  - Define metadata                  │
+│  - List sections                    │
+│  - Map placeholders                 │
+└──────────────┬──────────────────────┘
+               ↓
+┌─────────────────────────────────────┐
+│  2. UPLOAD MANIFEST                 │
+│  - ManifestService.parseManifest()  │
+│  - Validate schema                  │
+│  - Extract placeholders             │
+└──────────────┬──────────────────────┘
+               ↓
+┌─────────────────────────────────────┐
+│  3. MAP ASSETS                      │
+│  - Upload files (drag & drop)       │
+│  - Auto-map by naming (optional)    │
+│  - Batch upload folder (optional)   │
+│  - Manual mapping                   │
+└──────────────┬──────────────────────┘
+               ↓
+┌─────────────────────────────────────┐
+│  4. VALIDATE                        │
+│  - Incremental validation (live)    │
+│  - Local validation (instant)       │
+│  - Optional AI validation           │
+└──────────────┬──────────────────────┘
+               ↓
+┌─────────────────────────────────────┐
+│  5. PREVIEW                         │
+│  - Live preview assembled content   │
+│  - Test interactivity               │
+│  - Inspect HTML/CSS                 │
+└──────────────┬──────────────────────┘
+Continue
+
+10:22
+           ↓
+┌─────────────────────────────────────┐
+│  6. EXPORT                          │
+│  - Select export profile            │
+│  - Generate final file              │
+│  - Download                         │
+└─────────────────────────────────────┘
+
+
+### 6.2 Example: 30-Day Workbook
+
+**Step 1: Przygotuj strukturę**
+project/
+├── manifest.json
+├── workcards/
+│   ├── day01_breathing.html
+│   ├── day02_bodyscan.html
+│   └── ... (day03-30)
+├── audio/
+│   ├── meditation_breathing.mp3
+│   ├── meditation_bodyscan.mp3
+│   └── ...
+├── images/
+│   ├── nature_calm.jpg
+│   ├── body_awareness.jpg
+│   └── ...
+└── styles/
+├── workbook.css
+└── forms.css
+
+
+**Step 2: Manifest**
+```json
+{
+  "version": "2.0",
+  "metadata": { ... },
+  "sections": [
+    {
+      "id": "day-01",
+      "chapter": 1,
+      "title": "Dzień 1: Świadomy Oddech",
+      "placeholders": {
+        "{{WORKCARD_01}}": "workcards/day01_breathing.html",
+        "{{AUDIO_01}}": "audio/meditation_breathing.mp3",
+        "{{IMAGE_01}}": "images/nature_calm.jpg"
+      }
+    }
+    // ... more days
+  ]
+}
+```
+
+**Step 3: Workcard HTML (day01_breathing.html)**
+```html
+<div class="workcard">
+  <h3>Ćwiczenie: Świadomy Oddech</h3>
+  <p>Znajdź wygodną pozycję i zamknij oczy...</p>
+  
+  <form class="exercise-form">
+    <label>
+      Jak długo ćwiczyłeś/aś? (minuty)
+      <input type="number" name="duration" min="1" max="60">
+    </label>
+    
+    <label>
+      Jak się czujesz po ćwiczeniu?
+      <textarea name="reflection" rows="4"></textarea>
+    </label>
+    
+    <button type="submit">Zapisz odpowiedź</button>
+  </form>
+</div>
+```
+
+**Step 4: Upload do DTR**
+- Upload `manifest.json`
+- Upload folder `workcards/`
+- Upload folder `audio/`
+- Upload folder `images/`
+- Auto-map by naming
+
+**Step 5: Validate & Preview**
+- Check wszystkie 30 dni mapped
+- Preview Day 1 → test form
+- Preview Day 15 → check audio player
+
+**Step 6: Export**
+- Profile: "Therapy Workbook" (PDF A4)
+- Generate → `30-day-mindfulness-workbook.pdf`
+- Download & share
+
+---
+
+## 7. PERFORMANCE GUIDELINES
+
+### 7.1 Performance Targets
+
+| Operation | Target | Method |
+|-----------|--------|--------|
+| Parse manifest | <100ms | Sync JSON.parse |
+| Validate schema | <200ms | AJV validator |
+| Process 1 image | <500ms | OffscreenCanvas |
+| Process 1 HTML | <300ms | DOMPurify |
+| Map 50 assets | <2s | Async parallel |
+| Validate (local) | <500ms | Sync checks |
+| Validate (AI) | <5s | Single API call |
+| Inject placeholders | <3s | String replacement batch |
+| Export HTML | <1s | Template + bundle |
+| Export EPUB | <5s | Worker thread |
+| Export PDF | <15s | Worker thread |
+
+### 7.2 Optimization Strategies
+
+**1. Lazy Loading Assets**
+```typescript
+// Don't load all assets upfront
+const asset = mappings.get(placeholder);
+if (!asset.loaded) {
+  await loadAsset(asset); // Load on-demand
+}
+```
+
+**2. Batch Processing**
+```typescript
+// Process images in parallel
+await Promise.all(
+  images.map(img => AssetProcessor.process(img, 'raster', config))
+);
+```
+
+**3. Worker Threads dla Heavy Operations**
+```typescript
+// PDF generation off main thread
+const worker = new Worker('/workers/pdf.worker.js');
+worker.postMessage({ content, config });
+```
+
+**4. Incremental Rendering**
+```typescript
+// Don't wait for all sections, render progressively
+sections.forEach((section, i) => {
+  setTimeout(() => renderSection(section), i * 100);
+});
+```
+
+**5. Memoization**
+```typescript
+const processedCache = new Map<string, ProcessedAsset>();
+
+async function getProcessed(file: File): Promise<ProcessedAsset> {
+  const key = `${file.name}_${file.size}`;
+  if (processedCache.has(key)) {
+    return processedCache.get(key)!;
+  }
+  const processed = await AssetProcessor.process(file);
+  processedCache.set(key, processed);
+  return processed;
+}
+```
+
+### 7.3 Memory Management
+
+**Problem:** 50+ high-res images = memory leak.
+
+**Solution:**
+```typescript
+// Revoke object URLs after use
+function cleanup(assets: ProcessedAsset[]) {
+  assets.forEach(asset => {
+    if (asset.processedURL.startsWith('blob:')) {
+      URL.revokeObjectURL(asset.processedURL);
+    }
+  });
+}
+
+// Call after export
+await ExportEngine.exportPDF(...);
+cleanup(processedAssets);
+```
+
+---
+
+## 8. TESTING STRATEGY
+
+### 8.1 Unit Tests (Jest)
+```typescript
+// manifestService.test.ts
+describe('ManifestService', () => {
+  
+  it('should parse valid manifest', async () => {
+    const file = new File([validManifestJSON], 'manifest.json');
+    const manifest = await ManifestService.parseManifest(file);
+    expect(manifest.version).toBe('2.0');
+  });
+  
+  it('should reject invalid schema', async () => {
+    const file = new File([invalidJSON], 'manifest.json');
+    await expect(ManifestService.parseManifest(file)).rejects.toThrow();
+  });
+  
+  it('should extract placeholders correctly', () => {
+    const placeholders = ManifestService.extractPlaceholders(manifest);
+    expect(placeholders).toHaveLength(60); // 30 days * 2 placeholders
+  });
+});
+```
+
+### 8.2 Integration Tests
+```typescript
+// assembly.integration.test.ts
+describe('Assembly Pipeline', () => {
+  
+  it('should complete full assembly workflow', async () => {
+    const manifest = await ManifestService.parseManifest(manifestFile);
+    const placeholders = ManifestService.extractPlaceholders(manifest);
+    
+    // Map assets
+    const mappings = await Promise.all(
+      placeholders.map(async p => {
+        const file = assetFiles.find(f => f.name.includes(p.placeholder));
+        const processed = await AssetProcessor.process(file!, p.type, {});
+        return [p.placeholder, processed];
+      })
+    );
+    
+    // Validate
+    const validation = AssemblyValidator.validateLocal(placeholders);
+    expect(validation.status).toBe('COMPLETE');
+    
+    // Inject
+    const assembled = await PlaceholderParser.injectContent(
+      manuscriptText,
+      new Map(mappings)
+    );
+    
+    expect(assembled).not.toContain('{{');
+  });
+});
+```
+
+### 8.3 E2E Tests (Playwright)
+```typescript
+// assembly.e2e.test.ts
+test('User uploads manifest and exports HTML', async ({ page }) => {
+  await page.goto('/');
+  
+  // Select Assembly Mode
+  await page.click('[data-testid="mode-assembly"]');
+  
+  // Upload manifest
+  await page.setInputFiles('input[type="file"]', 'test-data/manifest.json');
+  await page.waitForSelector('[data-testid="placeholders-list"]');
+  
+  // Upload assets folder
+  await page.setInputFiles('input[webkitdirectory]', 'test-data/assets/');
+  
+  // Auto-map
+  await page.click('[data-testid="auto-map-button"]');
+  await page.waitForSelector('[data-testid="validation-complete"]');
+  
+  // Export
+  await page.click('[data-testid="export-html"]');
+  const download = await page.waitForEvent('download');
+  expect(download.suggestedFilename()).toBe('assembled-ebook.html');
+});
+```
+
+---
+
+## 9. DEPLOYMENT
+
+### 9.1 Build Configuration
+```json
+// package.json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "jest",
+    "test:e2e": "playwright test",
+    "lint": "eslint src/",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "mammoth": "^1.6.0",
+    "ajv": "^8.12.0",
+    "dompurify": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "vite": "^5.0.0",
+    "typescript": "^5.3.0",
+    "jest": "^29.0.0",
+    "playwright": "^1.40.0"
+  }
+}
+```
+
+### 9.2 Environment Variables
+```bash
+# .env.production
+VITE_AI_API_KEY=your_key_here
+VITE_STORAGE_ENDPOINT=https://storage.dtr.studio
+VITE_MAX_FILE_SIZE=10485760  # 10MB
+VITE_ENABLE_COLLABORATION=true
+```
+
+### 9.3 Claude Artifacts Deployment
+
+**Requirements:**
+- Single HTML artifact (all deps via CDN)
+- No localStorage/sessionStorage
+- Use Claude storage API for persistence
+
+**Entry point:**
+```html
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@19",
+      "react-dom": "https://esm.sh/react-dom@19",
+      "mammoth": "https://esm.sh/mammoth@1.6.0"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
+```
+
+---
+
+## 10. TROUBLESHOOTING
+
+### 10.1 Common Issues
+
+**Problem: Manifest validation fails**
+Error: Invalid manifest: data.sections[0].chapter should be >= 1
+
+**Solution:** Check chapter numbering starts at 1, is sequential.
+
+---
+
+**Problem: Asset not mapping**
+Warning: Placeholder {{WORKCARD_01}} not resolved
+
+**Solution:** 
+1. Check filename matches manifest path exactly
+2. Use batch auto-map
+3. Verify file uploaded successfully
+
+---
+
+**Problem: HTML injection fails / blank output**
+Error: DOMPurify removed all content
+
+**Solution:**
+1. Check HTML doesn't contain `<script>` tags
+2. Remove inline event handlers (`onclick=...`)
+3. Use allowed tags only
+
+---
+
+**Problem: PDF export hangs**
+Worker timeout after 30s
+
+**Solution:**
+1. Reduce image count/size
+2. Split into multiple PDFs
+3. Use "draft" quality profile
+
+---
+
+**Problem: Memory leak on large projects**
+Out of memory error after processing 100+ images
+
+**Solution:**
+```typescript
+// Revoke blob URLs periodically
+setInterval(() => {
+  processedAssets.forEach(a => {
+    if (!a.inUse) URL.revokeObjectURL(a.processedURL);
+  });
+}, 60000); // Every minute
+```
+
+---
+
+### 10.2 Debug Mode
+
+Enable verbose logging:
+```typescript
+// Add to App.tsx
+if (import.meta.env.DEV) {
+  window.DTR_DEBUG = true;
+}
+
+// In services
+if (window.DTR_DEBUG) {
+  console.log('[ManifestService] Parsing:', file.name);
+  console.log('[AssetProcessor] Processing:', asset.type);
+}
+```
+
+---
+
+## KONIEC DOKUMENTACJI TECHNICZNEJ
+
+**Next steps:**
+- Implementacja kodu
+- UI/UX mockupy
+- Example projects
+- Video tutorials
+
+**Pytania? Issues?**
+→ GitHub Issues: `https://github.com/hardbanrecords/dtr-studio/issues`
+
+---
+
+**Version:** 2.0.0  
+**Last Updated:** 2025-01-20  
+**Authors:** DTR Engineering Team
+
+
+Continue
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+

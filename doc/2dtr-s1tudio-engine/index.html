@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DTR STUDIO ENGINE --- HARDBANRECORDS LAB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Crimson+Pro:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&display=swap');
+      
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f1f5f9;
+        color: #064e3b;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(180, 83, 9, 0.3); border-radius: 10px; }
+
+      @media print {
+        @page { size: A4; margin: 0; }
+        body { background-color: white !important; margin: 0; }
+        .no-print { display: none !important; }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "mammoth": "https://esm.sh/mammoth@^1.6.0",
+    "pdfjs-dist": "https://esm.sh/pdfjs-dist@^4.0.379"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs" type="module"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

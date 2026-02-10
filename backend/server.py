@@ -13,6 +13,11 @@ from datetime import datetime, timezone, timedelta
 import pdfplumber
 import io
 import httpx
+import google.generativeai as genai
+
+# Import generators
+from lib.epub_generator import EPUBGenerator
+from lib.pdf_generator import PDFGenerator
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -35,27 +40,27 @@ class JsonCollection:
         with open(self.path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, default=str)
 
-    async def find_one(self, query, projection=None):
+    def find_one(self, query, projection=None):
         data = self._read()
         for item in data:
             if all(item.get(k) == v for k, v in query.items()):
                 return item
         return None
 
-    async def find(self, query=None, projection=None):
+    def find(self, query=None, projection=None):
         data = self._read()
         if not query:
             return JsonQueryBuilder(data)
         results = [item for item in data if all(item.get(k) == v for k, v in query.items())]
         return JsonQueryBuilder(results)
 
-    async def insert_one(self, doc):
+    def insert_one(self, doc):
         data = self._read()
         data.append(doc)
         self._write(data)
         return doc
 
-    async def update_one(self, query, update):
+    def update_one(self, query, update):
         data = self._read()
         updated = False
         for item in data:
@@ -72,7 +77,7 @@ class JsonCollection:
             self._write(data)
         return updated
 
-    async def delete_one(self, query):
+    def delete_one(self, query):
         data = self._read()
         for i, item in enumerate(data):
             if all(item.get(k) == v for k, v in query.items()):
@@ -81,13 +86,13 @@ class JsonCollection:
                 return True
         return False
 
-    async def delete_many(self, query):
+    def delete_many(self, query):
         data = self._read()
         new_data = [item for item in data if not all(item.get(k) == v for k, v in query.items())]
         self._write(new_data)
         return True
 
-    async def count_documents(self, query):
+    def count_documents(self, query):
         data = self._read()
         return len([item for item in data if all(item.get(k) == v for k, v in query.items())])
 
@@ -97,7 +102,7 @@ class JsonQueryBuilder:
     def sort(self, field, direction):
         self.data.sort(key=lambda x: str(x.get(field, "")), reverse=(direction == -1))
         return self
-    async def to_list(self, limit=None):
+    def to_list(self, limit=None):
         return self.data[:limit] if limit else self.data
 
 class JsonDB:
@@ -117,9 +122,10 @@ db = JsonDB()
 from lib.payments import StripeCheckout, CheckoutSessionResponse, CheckoutSessionRequest
 import resend
 import asyncio
+from lib.epub_generator import EPUBGenerator
 
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', 'sk_test_emergent')
-WEBBOOK_PRICE = 25.0  # Fixed price in USD
+WEBBOOK_PRICE = 15.0  # Fixed price in USD
 
 # PayPal Configuration
 PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID')
@@ -135,7 +141,45 @@ ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'hardbanrecordslab.pl@gmail.com')
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
 
+# Gemini AI Configuration
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    ai_model = genai.GenerativeModel('gemini-1.5-flash')
+else:
+    ai_model = None
+
+class AIRequest(BaseModel):
+    content: str
+
+class QuizQuestionAI(BaseModel):
+    question: str
+    options: List[str]
+    correct_answer: int
+    explanation: str
+
+class QuizAIResponse(BaseModel):
+    questions: List[QuizQuestionAI]
+
 app = FastAPI(title="Webbook Generator 3.0 API")
+
+# CORS Middleware - MUST be added BEFORE routes
+ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:80",
+        "http://195.191.162.224",
+        "https://app-webook.hardbanrecordslab.online",
+        "https://webook.hardbanrecordslab.online"
+    ],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 api_router = APIRouter(prefix="/api")
 
 logging.basicConfig(level=logging.INFO)
@@ -345,9 +389,16 @@ class Chapter(BaseModel):
 class QuizQuestion(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     question: str
-    options: List[str]
-    correct_answer: int
+    question_type: str = "multiple_choice"  # multiple_choice, true_false, short_answer, matching, drag_drop, hotspot
+    options: List[str] = []  # For multiple_choice and true_false
+    correct_answer: Any = 0  # Can be int (MCQ, T/F) or List[int] (DragDrop)
+    correct_answers: List[int] = []  # For matching (optional)
+    matching_pairs: List[Dict[str, str]] = []  # For matching: [{"left": "A", "right": "1"}, ...]
+    short_answer_regex: str = ""  # For short_answer validation
+    short_answer_keywords: List[str] = []  # Alternative: keywords to match
     explanation: str = ""
+    hints: List[str] = []  # Optional hints for the question
+    time_limit: int = 0  # 0 = no limit, in seconds
 
 class Quiz(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -389,7 +440,7 @@ async def get_current_user(request: Request) -> Optional[User]:
     if not session_token:
         return None
     
-    session = await db.user_sessions.find_one({"session_token": session_token}, {"_id": 0})
+    session = db.user_sessions.find_one({"session_token": session_token}, {"_id": 0})
     if not session:
         return None
     
@@ -401,18 +452,36 @@ async def get_current_user(request: Request) -> Optional[User]:
     if expires_at < datetime.now(timezone.utc):
         return None
     
-    user = await db.users.find_one({"user_id": session["user_id"]}, {"_id": 0})
+    user = db.users.find_one({"user_id": session["user_id"]}, {"_id": 0})
     if not user:
         return None
     
     return User(**user)
 
 async def require_auth(request: Request) -> User:
-    """Require authentication - raises 401 if not authenticated"""
-    user = await get_current_user(request)
+    """Require valid session authentication"""
+    # Check for session token in cookies
+    session_token = request.cookies.get("session_token")
+
+    if not session_token:
+        # Fallback: Check Authorization header
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            session_token = auth_header[7:]
+
+    if not session_token:
+        raise HTTPException(status_code=401, detail="No session token provided")
+
+    # Validate session
+    session = get_session_from_token(session_token)
+    if not session:
+        raise HTTPException(status_code=401, detail="Invalid or expired session")
+
+    user = db.users.find_one({"user_id": session.user_id}, {"_id": 0})
     if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    return user
+        raise HTTPException(status_code=401, detail="User not found")
+
+    return User(**user)
 
 # ==================== AUTH ENDPOINTS ====================
 
@@ -431,28 +500,25 @@ async def create_session(request: Request, response: Response):
         raise HTTPException(status_code=400, detail="session_id required")
     
     # LOCAL AUTH BYPASS (Removing Emergent Dependency)
-    # For development, we allow any valid-looking session_id to log in
+    # For development, we use a stable user_id for the local dev
     data = {
         "email": "local_user@example.com",
         "name": "Local Developer",
         "picture": ""
     }
     
-    # Check if user exists
+    # Stable user_id for local developer
+    user_id = "user_local_dev_12345"
     
     # Check if user exists
-    existing_user = await db.users.find_one({"email": data["email"]}, {"_id": 0})
+    existing_user = db.users.find_one({"email": data["email"]}, {"_id": 0})
     
     if existing_user:
+        # Ensure we use the stable ID if it was already created differently, 
+        # but for consistency we'll stick to one.
         user_id = existing_user["user_id"]
-        # Update user data
-        await db.users.update_one(
-            {"user_id": user_id},
-            {"$set": {"name": data["name"], "picture": data.get("picture", "")}}
-        )
     else:
-        # Create new user
-        user_id = f"user_{uuid.uuid4().hex[:12]}"
+        # Create new user with current data
         user_doc = {
             "user_id": user_id,
             "email": data["email"],
@@ -460,38 +526,38 @@ async def create_session(request: Request, response: Response):
             "picture": data.get("picture", ""),
             "created_at": datetime.now(timezone.utc).isoformat()
         }
-        await db.users.insert_one(user_doc)
+        db.users.insert_one(user_doc)
     
     # Create session
     session_token = f"sess_{uuid.uuid4().hex}"
     expires_at = datetime.now(timezone.utc) + timedelta(days=7)
     
-    await db.user_sessions.insert_one({
+    db.user_sessions.insert_one({
         "user_id": user_id,
         "session_token": session_token,
         "expires_at": expires_at.isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat()
     })
     
-    # Set cookie
+    # Set cookie (Relaxed for local development)
     response.set_cookie(
         key="session_token",
         value=session_token,
         httponly=True,
-        secure=True,
-        samesite="none",
+        secure=False,  
+        samesite="lax", 
         path="/",
         max_age=7 * 24 * 60 * 60
     )
     
-    user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    user = db.users.find_one({"user_id": user_id}, {"_id": 0})
     return user
 
 @api_router.post("/auth/logout")
 async def logout(request: Request, response: Response):
     session_token = request.cookies.get("session_token")
     if session_token:
-        await db.user_sessions.delete_one({"session_token": session_token})
+        db.user_sessions.delete_one({"session_token": session_token})
     
     response.delete_cookie(key="session_token", path="/")
     return {"message": "Logged out"}
@@ -517,21 +583,21 @@ async def create_project(project: ProjectCreate, request: Request):
     doc['updated_at'] = doc['updated_at'].isoformat()
     doc['settings'] = project_obj.settings.model_dump()
     
-    await db.projects.insert_one(doc)
+    db.projects.insert_one(doc)
     return project_obj.model_dump()
 
 @api_router.get("/projects")
 async def get_projects(request: Request):
     user = await require_auth(request)
     
-    projects = await db.projects.find({"user_id": user.user_id}, {"_id": 0}).to_list(100)
+    projects = db.projects.find({"user_id": user.user_id}, {"_id": 0}).to_list(100)
     return projects
 
 @api_router.get("/projects/{project_id}")
 async def get_project(project_id: str, request: Request):
     user = await require_auth(request)
     
-    project = await db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
+    project = db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
@@ -541,15 +607,15 @@ async def update_project(project_id: str, updates: Dict[str, Any], request: Requ
     user = await require_auth(request)
     
     updates['updated_at'] = datetime.now(timezone.utc).isoformat()
-    await db.projects.update_one({"id": project_id, "user_id": user.user_id}, {"$set": updates})
+    db.projects.update_one({"id": project_id, "user_id": user.user_id}, {"$set": updates})
     return await get_project(project_id, request)
 
 @api_router.delete("/projects/{project_id}")
 async def delete_project(project_id: str, request: Request):
     user = await require_auth(request)
     
-    await db.projects.delete_one({"id": project_id, "user_id": user.user_id})
-    await db.chapters.delete_many({"project_id": project_id})
+    db.projects.delete_one({"id": project_id, "user_id": user.user_id})
+    db.chapters.delete_many({"project_id": project_id})
     return {"message": "Project deleted"}
 
 # ==================== CHAPTER ENDPOINTS ====================
@@ -559,11 +625,11 @@ async def create_chapter(project_id: str, chapter_data: Dict[str, Any], request:
     user = await require_auth(request)
     
     # Verify project ownership
-    project = await db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
+    project = db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    count = await db.chapters.count_documents({"project_id": project_id})
+    count = db.chapters.count_documents({"project_id": project_id})
     
     chapter = Chapter(
         project_id=project_id,
@@ -577,8 +643,8 @@ async def create_chapter(project_id: str, chapter_data: Dict[str, Any], request:
     doc['created_at'] = doc['created_at'].isoformat()
     doc['updated_at'] = doc['updated_at'].isoformat()
     
-    await db.chapters.insert_one(doc)
-    await db.projects.update_one({"id": project_id}, {"$inc": {"total_chapters": 1}})
+    db.chapters.insert_one(doc)
+    db.projects.update_one({"id": project_id}, {"$inc": {"total_chapters": 1}})
     
     return chapter.model_dump()
 
@@ -587,23 +653,23 @@ async def get_chapters(project_id: str, request: Request):
     user = await require_auth(request)
     
     # Verify project ownership
-    project = await db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
+    project = db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    chapters = await db.chapters.find({"project_id": project_id}, {"_id": 0}).sort("order", 1).to_list(100)
+    chapters = db.chapters.find({"project_id": project_id}, {"_id": 0}).sort("order", 1).to_list(100)
     return chapters
 
 @api_router.put("/chapters/{chapter_id}")
 async def update_chapter(chapter_id: str, updates: Dict[str, Any], request: Request):
     user = await require_auth(request)
     
-    chapter = await db.chapters.find_one({"id": chapter_id}, {"_id": 0})
+    chapter = db.chapters.find_one({"id": chapter_id}, {"_id": 0})
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
     
     # Verify ownership via project
-    project = await db.projects.find_one({"id": chapter["project_id"], "user_id": user.user_id}, {"_id": 0})
+    project = db.projects.find_one({"id": chapter["project_id"], "user_id": user.user_id}, {"_id": 0})
     if not project:
         raise HTTPException(status_code=403, detail="Not authorized")
     
@@ -611,23 +677,46 @@ async def update_chapter(chapter_id: str, updates: Dict[str, Any], request: Requ
         updates['reading_time'] = calculate_reading_time(updates['content'])
     updates['updated_at'] = datetime.now(timezone.utc).isoformat()
     
-    await db.chapters.update_one({"id": chapter_id}, {"$set": updates})
-    return await db.chapters.find_one({"id": chapter_id}, {"_id": 0})
+    db.chapters.update_one({"id": chapter_id}, {"$set": updates})
+    return db.chapters.find_one({"id": chapter_id}, {"_id": 0})
 
 @api_router.delete("/chapters/{chapter_id}")
 async def delete_chapter(chapter_id: str, request: Request):
     user = await require_auth(request)
-    
-    chapter = await db.chapters.find_one({"id": chapter_id}, {"_id": 0})
+
+    chapter = db.chapters.find_one({"id": chapter_id}, {"_id": 0})
     if chapter:
-        project = await db.projects.find_one({"id": chapter["project_id"], "user_id": user.user_id}, {"_id": 0})
+        project = db.projects.find_one({"id": chapter["project_id"], "user_id": user.user_id}, {"_id": 0})
         if not project:
             raise HTTPException(status_code=403, detail="Not authorized")
-        
-        await db.chapters.delete_one({"id": chapter_id})
-        await db.projects.update_one({"id": chapter["project_id"]}, {"$inc": {"total_chapters": -1}})
-    
+
+        db.chapters.delete_one({"id": chapter_id})
+        db.projects.update_one({"id": chapter["project_id"]}, {"$inc": {"total_chapters": -1}})
+
     return {"message": "Chapter deleted"}
+
+@api_router.put("/chapters/reorder")
+async def reorder_chapters(body: Dict[str, Any], request: Request):
+    user = await require_auth(request)
+
+    chapter_ids = body.get("chapter_ids", [])
+    if not chapter_ids:
+        raise HTTPException(status_code=400, detail="No chapters provided")
+
+    # Get first chapter to verify project ownership
+    first_chapter = db.chapters.find_one({"id": chapter_ids[0]}, {"_id": 0})
+    if not first_chapter:
+        raise HTTPException(status_code=404, detail="Chapter not found")
+
+    project = db.projects.find_one({"id": first_chapter["project_id"], "user_id": user.user_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    # Update order for each chapter
+    for i, chapter_id in enumerate(chapter_ids):
+        db.chapters.update_one({"id": chapter_id}, {"$set": {"order": i, "updated_at": datetime.now(timezone.utc).isoformat()}})
+
+    return {"message": "Chapters reordered"}
 
 # ==================== QUIZ ENDPOINTS ====================
 
@@ -641,14 +730,134 @@ async def create_quiz(chapter_id: str, quiz_data: Dict[str, Any], request: Reque
         questions=[QuizQuestion(**q) for q in quiz_data.get("questions", [])]
     )
     
-    await db.quizzes.delete_many({"chapter_id": chapter_id})  # Replace existing
-    await db.quizzes.insert_one(quiz.model_dump())
+    db.quizzes.delete_many({"chapter_id": chapter_id})  # Replace existing
+    db.quizzes.insert_one(quiz.model_dump())
     return quiz.model_dump()
 
 @api_router.get("/chapters/{chapter_id}/quiz")
 async def get_quiz(chapter_id: str):
-    quiz = await db.quizzes.find_one({"chapter_id": chapter_id}, {"_id": 0})
+    quiz = db.quizzes.find_one({"chapter_id": chapter_id}, {"_id": 0})
     return quiz
+
+@api_router.post("/chapters/{chapter_id}/quiz/evaluate")
+async def evaluate_quiz(chapter_id: str, request: Request):
+    """Submit and evaluate quiz answers"""
+    body = await request.json()
+    answers = body.get("answers", {})  # Format: {"q_index": answer_value}
+
+    quiz = db.quizzes.find_one({"chapter_id": chapter_id}, {"_id": 0})
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+
+    results = {
+        "total_questions": len(quiz["questions"]),
+        "correct_count": 0,
+        "score_percentage": 0,
+        "question_results": []
+    }
+
+    for idx, question in enumerate(quiz["questions"]):
+        q_type = question.get("question_type", "multiple_choice")
+        user_answer = answers.get(str(idx))
+        is_correct = False
+
+        if q_type == "multiple_choice":
+            is_correct = user_answer == question.get("correct_answer")
+        elif q_type == "true_false":
+            # True/False is stored as 0 (False) or 1 (True)
+            is_correct = user_answer == question.get("correct_answer")
+        elif q_type == "short_answer":
+            # Check keywords or regex
+            if user_answer:
+                keywords = question.get("short_answer_keywords", [])
+                if keywords:
+                    is_correct = any(kw.lower() in user_answer.lower() for kw in keywords)
+                else:
+                    import re
+                    regex = question.get("short_answer_regex", "")
+                    if regex:
+                        try:
+                            is_correct = bool(re.search(regex, user_answer, re.IGNORECASE))
+                        except:
+                            is_correct = False
+        elif q_type == "matching":
+            # Matching: user_answer is list of selected right values
+            # Correct answers are the right values from matching_pairs in order
+            correct_matches = [pair.get("right", "") for pair in question.get("matching_pairs", [])]
+            is_correct = user_answer == correct_matches if user_answer else False
+        elif q_type == "drag_drop":
+            # Drag & drop: user provides ranking (positions)
+            correct_order = question.get("correct_answer", [])
+            is_correct = user_answer == correct_order if user_answer else False
+
+        if is_correct:
+            results["correct_count"] += 1
+
+        results["question_results"].append({
+            "question_index": idx,
+            "question": question.get("question"),
+            "question_type": q_type,
+            "user_answer": user_answer,
+            "correct_answer": question.get("correct_answer"),
+            "correct": is_correct,
+            "explanation": question.get("explanation", "")
+        })
+
+    results["score_percentage"] = round((results["correct_count"] / results["total_questions"]) * 100, 2)
+    results["passed"] = results["correct_count"] == results["total_questions"]
+
+    return results
+
+@api_router.post("/ai/generate-quiz")
+async def generate_quiz_ai(data: AIRequest):
+    if not ai_model:
+        # Fallback / Mock for development if no API key
+        return {
+            "questions": [
+                {
+                    "question": "What is the main topic of this chapter?",
+                    "options": ["Option A", "Option B", "Option C", "Option D"],
+                    "correct_answer": 0,
+                    "explanation": "This is a mock question because Gemini API key is not set."
+                }
+            ]
+        }
+    
+    prompt = f"""
+    Analyze the following educational content and generate a quiz in JSON format.
+    The quiz should have 3-5 multiple choice questions.
+    Each question must have exactly 4 options, a correct_index (0-3), and a brief explanation.
+    
+    Content:
+    {data.content}
+    
+    Return ONLY JSON in this format:
+    {{
+        "questions": [
+            {{
+                "question": "string",
+                "options": ["string", "string", "string", "string"],
+                "correct_answer": number,
+                "explanation": "string"
+            }}
+        ]
+    }}
+    """
+    
+    try:
+        response = ai_model.generate_content(prompt)
+        # Attempt to parse JSON from response
+        text = response.text
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0].strip()
+        elif "```" in text:
+            text = text.split("```")[1].split("```")[0].strip()
+        
+        quiz_data = json.loads(text)
+        return quiz_data
+    except Exception as e:
+        logger.error(f"AI Generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to generate quiz with AI")
 
 # ==================== PDF UPLOAD ====================
 
@@ -656,7 +865,7 @@ async def get_quiz(chapter_id: str):
 async def upload_pdf(project_id: str, request: Request, file: UploadFile = File(...)):
     user = await require_auth(request)
     
-    project = await db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
+    project = db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
@@ -702,9 +911,9 @@ async def upload_pdf(project_id: str, request: Request, file: UploadFile = File(
             doc = chapter.model_dump()
             doc['created_at'] = doc['created_at'].isoformat()
             doc['updated_at'] = doc['updated_at'].isoformat()
-            await db.chapters.insert_one(doc)
+            db.chapters.insert_one(doc)
         
-        await db.projects.update_one(
+        db.projects.update_one(
             {"id": project_id},
             {"$set": {"total_chapters": len(chapters), "updated_at": datetime.now(timezone.utc).isoformat()}}
         )
@@ -731,7 +940,7 @@ async def create_checkout(request: Request):
         raise HTTPException(status_code=400, detail="origin_url required")
     
     # Verify project ownership
-    project = await db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
+    project = db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
@@ -763,7 +972,7 @@ async def create_checkout(request: Request):
     session = await stripe_checkout.create_checkout_session(checkout_request)
     
     # Create payment transaction record
-    await db.payment_transactions.insert_one({
+    db.payment_transactions.insert_one({
         "session_id": session.session_id,
         "user_id": user.user_id,
         "project_id": project_id,
@@ -787,23 +996,23 @@ async def get_payment_status(session_id: str, request: Request):
     status = await stripe_checkout.get_checkout_status(session_id)
     
     # Get transaction
-    transaction = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+    transaction = db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
     
     if transaction and status.payment_status == "paid" and transaction.get("payment_status") != "paid":
         # Update transaction
-        await db.payment_transactions.update_one(
+        db.payment_transactions.update_one(
             {"session_id": session_id},
             {"$set": {"payment_status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
         )
         
         # Update project
-        await db.projects.update_one(
+        db.projects.update_one(
             {"id": transaction["project_id"]},
             {"$set": {"payment_status": "paid", "status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
         )
         
         # Send emails
-        project = await db.projects.find_one({"id": transaction["project_id"]}, {"_id": 0})
+        project = db.projects.find_one({"id": transaction["project_id"]}, {"_id": 0})
         if project:
             await send_payment_confirmation_email(
                 user.email, user.name, project["title"], WEBBOOK_PRICE
@@ -834,14 +1043,14 @@ async def stripe_webhook(request: Request):
         event = await stripe_checkout.handle_webhook(body, signature)
         
         if event.payment_status == "paid":
-            await db.payment_transactions.update_one(
+            db.payment_transactions.update_one(
                 {"session_id": event.session_id},
                 {"$set": {"payment_status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
             )
             
-            transaction = await db.payment_transactions.find_one({"session_id": event.session_id}, {"_id": 0})
+            transaction = db.payment_transactions.find_one({"session_id": event.session_id}, {"_id": 0})
             if transaction:
-                await db.projects.update_one(
+                db.projects.update_one(
                     {"id": transaction["project_id"]},
                     {"$set": {"payment_status": "paid", "status": "paid"}}
                 )
@@ -898,7 +1107,7 @@ async def create_paypal_checkout(request: Request):
         raise HTTPException(status_code=400, detail="origin_url required")
     
     # Verify project ownership
-    project = await db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
+    project = db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
@@ -963,7 +1172,7 @@ async def create_paypal_checkout(request: Request):
             raise HTTPException(status_code=500, detail="PayPal approval URL not found")
         
         # Store transaction
-        await db.payment_transactions.insert_one({
+        db.payment_transactions.insert_one({
             "session_id": order["id"],
             "user_id": user.user_id,
             "project_id": project_id,
@@ -1017,21 +1226,21 @@ async def capture_paypal_payment(order_id: str, request: Request):
         
         if capture["status"] == "COMPLETED":
             # Update transaction
-            await db.payment_transactions.update_one(
+            db.payment_transactions.update_one(
                 {"session_id": order_id},
                 {"$set": {"payment_status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
             )
             
             # Update project and send emails
-            transaction = await db.payment_transactions.find_one({"session_id": order_id}, {"_id": 0})
+            transaction = db.payment_transactions.find_one({"session_id": order_id}, {"_id": 0})
             if transaction:
-                await db.projects.update_one(
+                db.projects.update_one(
                     {"id": transaction["project_id"]},
                     {"$set": {"payment_status": "paid", "status": "paid"}}
                 )
                 
                 # Get project info for email
-                project = await db.projects.find_one({"id": transaction["project_id"]}, {"_id": 0})
+                project = db.projects.find_one({"id": transaction["project_id"]}, {"_id": 0})
                 if project:
                     # Send confirmation email to customer
                     await send_payment_confirmation_email(
@@ -1046,12 +1255,72 @@ async def capture_paypal_payment(order_id: str, request: Request):
 
 # ==================== EXPORT ====================
 
+@api_router.get("/projects/{project_id}/export/markdown")
+async def export_webbook_markdown(project_id: str, request: Request):
+    """Export webbook as Markdown ZIP"""
+    user = await require_auth(request)
+
+    project = db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    chapters = db.chapters.find({"project_id": project_id}, {"_id": 0}).sort("order", 1).to_list(100)
+
+    # Generate Markdown
+    from lib.markdown_generator import MarkdownGenerator
+    md_gen = MarkdownGenerator(project, chapters)
+    md_bytes = md_gen.generate()
+
+    filename = f"{project['title'].replace(' ', '_')}_webbook.zip"
+
+    return {
+        "markdown": md_bytes.hex(),  # Convert bytes to hex for JSON serialization
+        "filename": filename
+    }
+
+@api_router.get("/projects/{project_id}/export/json")
+async def export_webbook_json(project_id: str, request: Request):
+    """Export webbook as JSON backup"""
+    user = await require_auth(request)
+
+    project = db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    chapters = db.chapters.find({"project_id": project_id}, {"_id": 0}).sort("order", 1).to_list(100)
+    quizzes = []
+    for ch in chapters:
+        q = db.quizzes.find_one({"chapter_id": ch["id"]}, {"_id": 0})
+        if q:
+            quizzes.append(q)
+
+    # Create backup structure
+    backup = {
+        "export_date": datetime.now(timezone.utc).isoformat(),
+        "webbook_version": "3.0",
+        "project": project,
+        "chapters": chapters,
+        "quizzes": quizzes,
+        "metadata": {
+            "total_chapters": len(chapters),
+            "total_quizzes": len(quizzes),
+            "exported_by": user.email
+        }
+    }
+
+    filename = f"{project['title'].replace(' ', '_')}_backup.json"
+
+    return {
+        "data": backup,
+        "filename": filename
+    }
+
 @api_router.get("/projects/{project_id}/export")
 async def export_webbook(project_id: str, request: Request):
     """Export webbook as standalone HTML - only for paid projects"""
     user = await require_auth(request)
     
-    project = await db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
+    project = db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
@@ -1059,98 +1328,325 @@ async def export_webbook(project_id: str, request: Request):
     if project.get("payment_status") != "paid":
         raise HTTPException(status_code=402, detail="Payment required to export webbook")
     
-    chapters = await db.chapters.find({"project_id": project_id}, {"_id": 0}).sort("order", 1).to_list(100)
-    
+    chapters = db.chapters.find({"project_id": project_id}, {"_id": 0}).sort("order", 1).to_list(100)
+
     html_content = generate_webbook_html(project, chapters)
-    
+
     return {"html": html_content, "filename": f"{project['title'].replace(' ', '_')}_webbook.html"}
+
+@api_router.get("/projects/{project_id}/export/epub")
+async def export_webbook_epub(project_id: str, request: Request):
+    """Export webbook as EPUB"""
+    user = await require_auth(request)
+
+    project = db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    chapters = db.chapters.find({"project_id": project_id}, {"_id": 0}).sort("order", 1).to_list(100)
+
+    # Generate EPUB
+    epub_gen = EPUBGenerator(project, chapters, author=user.name or "Author")
+    epub_bytes = epub_gen.generate()
+
+    filename = f"{project['title'].replace(' ', '_')}_webbook.epub"
+
+    return {
+        "epub": epub_bytes.hex(),  # Convert bytes to hex for JSON serialization
+        "filename": filename
+    }
+
+@api_router.get("/projects/{project_id}/export/pdf")
+async def export_webbook_pdf(project_id: str, request: Request):
+    """Export webbook as PDF"""
+    user = await require_auth(request)
+
+    project = db.projects.find_one({"id": project_id, "user_id": user.user_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    chapters = db.chapters.find({"project_id": project_id}, {"_id": 0}).sort("order", 1).to_list(100)
+
+    # Generate PDF
+    pdf_gen = PDFGenerator(project, chapters, author=user.name or "Author")
+    pdf_bytes = pdf_gen.generate()
+
+    filename = f"{project['title'].replace(' ', '_')}_webbook.pdf"
+
+    return {
+        "pdf": pdf_bytes.hex(),  # Convert bytes to hex for JSON serialization
+        "filename": filename
+    }
 
 def generate_webbook_html(project: dict, chapters: list) -> str:
     settings = project.get('settings', {})
-    primary = settings.get('primary_color', '#14532D')
+    primary = settings.get('primary_color', '#8B5CF6')
     
     chapters_html = ""
     toc_html = ""
     
+    # Pre-fetch quizzes
+    quizzes = {}
+    for ch in chapters:
+        q = db.quizzes.find_one({"chapter_id": ch["id"]}, {"_id": 0})
+        if q: quizzes[ch["id"]] = q
+
     for i, ch in enumerate(chapters):
         chapter_id = f"chapter-{i}"
         toc_html += f'<li><a href="#{chapter_id}" class="toc-link" data-chapter="{i}">{ch["title"]}</a></li>'
+        
+        quiz_html = ""
+        if ch["id"] in quizzes:
+            q_data = quizzes[ch["id"]]
+            quiz_html = f'''<div class="quiz-container" id="quiz-{i}"><h3>📝 {q_data.get('title', 'Chapter Quiz')}</h3>'''
+            for q_idx, q in enumerate(q_data.get('questions', [])):
+                opts = "".join([f'<button class="quiz-opt" onclick="selectOption({i}, {q_idx}, {o_idx})">{o}</button>' for o_idx, o in enumerate(q['options'])])
+                quiz_html += f'''<div class="quiz-q" data-correct="{q['correct_answer']}"><p><strong>{q_idx+1}. {q['question']}</strong></p><div class="quiz-options">{opts}</div><p class="explanation" style="display:none">💡 {q.get("explanation", "")}</p></div>'''
+            quiz_html += f'<button class="quiz-submit" id="submit-{i}" onclick="submitQuiz({i})">Submit Quiz</button></div>'
+
         chapters_html += f'''
-        <section id="{chapter_id}" class="chapter" data-index="{i}">
+        <section id="{chapter_id}" class="chapter">
             <h2 class="chapter-title">{ch["title"]}</h2>
-            <div class="chapter-meta"><span>⏱️ {ch.get("reading_time", 5)} min read</span></div>
+            <div class="chapter-meta"><span>⏱️ {ch.get("reading_time", 1)} min read</span></div>
             <div class="chapter-content">{ch["content"]}</div>
+            {quiz_html}
             <div class="chapter-complete">
-                <button class="complete-btn" onclick="completeChapter({i})">✓ Complete Chapter (+10 XP)</button>
+                <button class="complete-btn" id="btn-{i}" onclick="completeChapter({i})" {f'style="display:none"' if ch["id"] in quizzes else ""}>✓ Complete Chapter (+10 XP)</button>
             </div>
-        </section>
-        '''
+        </section>'''
     
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{project["title"]}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {{ --primary: {primary}; --bg: #FDFCF8; --text: #2C2C2C; }}
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: 'Manrope', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }}
-        .header {{ background: var(--primary); color: white; padding: 2rem; text-align: center; position: sticky; top: 0; z-index: 100; }}
-        .header h1 {{ font-family: 'Fraunces', serif; font-size: 2rem; margin-bottom: 0.5rem; }}
-        .progress-bar {{ height: 4px; background: rgba(255,255,255,0.3); margin-top: 1rem; }}
-        .progress-fill {{ height: 100%; background: white; width: 0%; transition: width 0.3s; }}
-        .stats {{ display: flex; justify-content: center; gap: 2rem; padding: 1rem; background: #f5f5f5; font-size: 0.9rem; }}
-        .container {{ display: grid; grid-template-columns: 250px 1fr; max-width: 1400px; margin: 0 auto; }}
-        .sidebar {{ background: white; border-right: 1px solid #e0e0e0; padding: 2rem 1rem; position: sticky; top: 120px; height: calc(100vh - 120px); overflow-y: auto; }}
-        .sidebar h3 {{ font-size: 0.8rem; text-transform: uppercase; color: #888; margin-bottom: 1rem; }}
-        .toc-link {{ display: block; padding: 0.75rem 1rem; color: var(--text); text-decoration: none; border-radius: 8px; margin-bottom: 0.25rem; transition: all 0.2s; }}
-        .toc-link:hover, .toc-link.active {{ background: var(--primary); color: white; }}
-        .toc-link.completed::before {{ content: '✓ '; color: var(--primary); }}
-        .content {{ padding: 3rem; max-width: 800px; }}
-        .chapter {{ margin-bottom: 4rem; padding-bottom: 2rem; border-bottom: 1px solid #e0e0e0; }}
-        .chapter-title {{ font-family: 'Fraunces', serif; font-size: 2rem; color: var(--primary); margin-bottom: 1rem; }}
-        .chapter-meta {{ color: #888; font-size: 0.9rem; margin-bottom: 2rem; }}
-        .chapter-content {{ line-height: 1.8; }}
-        .chapter-content p {{ margin-bottom: 1.5rem; }}
-        .complete-btn {{ background: var(--primary); color: white; border: none; padding: 1rem 2rem; border-radius: 8px; cursor: pointer; font-size: 1rem; margin-top: 2rem; transition: transform 0.2s; }}
-        .complete-btn:hover {{ transform: scale(1.02); }}
-        .complete-btn.done {{ background: #888; cursor: default; }}
-        @media (max-width: 768px) {{ .container {{ grid-template-columns: 1fr; }} .sidebar {{ display: none; }} .content {{ padding: 1.5rem; }} }}
+        body {{ font-family: 'Manrope', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; margin: 0; }}
+        .header {{ background: var(--primary); color: white; padding: 3rem 2rem; text-align: center; }}
+        .header h1 {{ font-family: 'Fraunces', serif; margin: 0; font-size: 2.5rem; }}
+        .progress-bar {{ height: 6px; background: rgba(255,255,255,0.2); margin-top: 2rem; border-radius: 3px; max-width: 600px; margin-left: auto; margin-right: auto; }}
+        .progress-fill {{ height: 100%; background: white; width: 0%; transition: width 0.5s; border-radius: 3px; }}
+        .stats {{ display: flex; justify-content: center; gap: 2rem; padding: 1rem; background: #fff; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; }}
+        .container {{ display: grid; grid-template-columns: 280px 1fr; max-width: 1400px; margin: 0 auto; min-height: 100vh; }}
+        .sidebar {{ padding: 2rem; border-right: 1px solid #eee; position: sticky; top: 60px; height: calc(100vh - 60px); overflow-y: auto; background: #fafafa; }}
+        .toc-link {{ display: block; padding: 0.8rem 1rem; color: #666; text-decoration: none; border-radius: 12px; margin-bottom: 0.3rem; transition: 0.2s; font-weight: 500; }}
+        .toc-link:hover {{ background: #eee; }}
+        .toc-link.active {{ background: var(--primary); color: white; }}
+        .toc-link.completed::before {{ content: '✓ '; color: #10b981; }}
+        .content {{ padding: 4rem; max-width: 850px; }}
+        .chapter {{ margin-bottom: 6rem; }}
+        .chapter-title {{ font-family: 'Fraunces', serif; font-size: 2.5rem; color: var(--primary); margin-bottom: 0.5rem; }}
+        .chapter-meta {{ color: #999; font-size: 0.9rem; margin-bottom: 3rem; }}
+        .chapter-content img {{ max-width: 100%; border-radius: 16px; margin: 2rem 0; }}
+        .complete-btn, .quiz-submit {{ background: var(--primary); color: white; border: none; padding: 1.2rem 2.5rem; border-radius: 50px; cursor: pointer; font-size: 1.1rem; font-weight: 600; width: 100%; transition: 0.3s; }}
+        .complete-btn:hover {{ opacity: 0.9; transform: translateY(-2px); }}
+        .complete-btn.done {{ background: #10b981; cursor: default; }}
+        /* Widgets */
+        .audio-widget {{ background: rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.1); padding: 1.5rem; border-radius: 20px; display: flex; align-items: center; gap: 1rem; margin: 2rem 0; }}
+        .video-container {{ position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 20px; margin: 2rem 0; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }}
+        .video-container iframe, .video-container video {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }}
+        .accordion-item {{ border: 1px solid #eee; border-radius: 12px; margin-bottom: 1rem; overflow: hidden; }}
+        .accordion-header {{ padding: 1rem 1.5rem; background: #fff; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }}
+        .accordion-content {{ padding: 0 1.5rem; max-height: 0; overflow: hidden; transition: 0.3s; background: #fafafa; }}
+        .accordion-item.open .accordion-content {{ padding: 1.5rem; max-height: 500px; border-top: 1px solid #eee; }}
+        .tabs-container {{ border: 1px solid #eee; border-radius: 20px; overflow: hidden; margin: 2rem 0; }}
+        .tabs-header {{ display: flex; background: #f5f5f5; border-bottom: 1px solid #eee; }}
+        .tab-btn {{ padding: 1rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: #666; }}
+        .tab-btn.active {{ background: #fff; color: var(--primary); box-shadow: 0 -2px 0 var(--primary) inset; }}
+        .tab-content {{ display: none; padding: 2rem; background: #fff; }}
+        .tab-content.active {{ display: block; }}
+        .poll-container {{ background: #f9f9f9; border: 2px solid #eee; padding: 2rem; border-radius: 24px; margin: 2rem 0; }}
+        .code-block {{ background: #1a1a1a; color: #fff; padding: 1.5rem; border-radius: 16px; font-family: monospace; overflow-x: auto; margin: 2rem 0; position: relative; }}
+        .code-lang {{ position: absolute; top: 0; right: 0; background: rgba(255,255,255,0.1); padding: 0.2rem 0.8rem; font-size: 0.7rem; border-bottom-left-radius: 8px; }}
+        
+        .flashcard {{ perspective: 1000px; height: 250px; margin: 2rem 0; cursor: pointer; }}
+        .flashcard-inner {{ position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }}
+        .flashcard.flipped .flashcard-inner {{ transform: rotateY(180deg); }}
+        .flashcard-front, .flashcard-back {{ position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 24px; padding: 2rem; text-align: center; border: 2px solid var(--primary); }}
+        .flashcard-back {{ background: var(--primary); color: white; transform: rotateY(180deg); }}
+        .quiz-container {{ background: #fff; border: 2px solid #eee; padding: 2rem; border-radius: 24px; margin-top: 3rem; }}
+        .quiz-options {{ display: grid; gap: 0.8rem; margin: 1.5rem 0; }}
+        .quiz-opt {{ padding: 1rem; border: 2px solid #eee; border-radius: 12px; background: none; cursor: pointer; text-align: left; transition: 0.2s; }}
+        .quiz-opt:hover {{ border-color: var(--primary); }}
+        .quiz-opt.selected {{ border-color: var(--primary); background: rgba(0,0,0,0.02); }}
+        .quiz-opt.correct {{ border-color: #10b981; background: #ecfdf5; }}
+        .quiz-opt.wrong {{ border-color: #ef4444; background: #fef2f2; }}
+        @media (max-width: 900px) {{ .container {{ grid-template-columns: 1fr; }} .sidebar {{ display: none; }} .content {{ padding: 2rem; }} }}
     </style>
 </head>
 <body>
-    <header class="header">
-        <h1>{project["title"]}</h1>
-        <p>{project.get("description", "")}</p>
-        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
-    </header>
+    <header class="header"><h1>{project["title"]}</h1><p>{project.get("description", "")}</p><div class="progress-bar"><div class="progress-fill" id="progress"></div></div></header>
     <div class="stats">
-        <span>🏆 XP: <strong id="xp">0</strong></span>
-        <span>📚 Completed: <strong id="completed">0</strong>/{len(chapters)}</span>
+        <span>XP: <strong id="xp">0</strong></span>
+        <span>Completed: <strong id="completed">0</strong>/{len(chapters)}</span>
+        <div id="badge-list" style="display:flex;gap:0.5rem"></div>
     </div>
-    <div class="container">
-        <aside class="sidebar"><h3>Table of Contents</h3><ul style="list-style:none">{toc_html}</ul></aside>
-        <main class="content">{chapters_html}</main>
-    </div>
+    <div class="container"><aside class="sidebar"><ul style="list-style:none">{toc_html}</ul></aside><main class="content">{chapters_html}
+        <div id="certificate-area" style="display:none;margin-top:5rem;padding:4rem;border:10px double var(--primary);text-align:center;background:#fff;border-radius:24px">
+            <h1 style="font-family:'Fraunces', serif;color:var(--primary)">Certificate of Completion</h1>
+            <p>This is to certify that you have successfully completed</p>
+            <h2 style="font-family:'Fraunces', serif">{project["title"]}</h2>
+            <p>Score: <span id="cert-xp"></span> XP</p>
+            <div style="margin-top:3rem;font-style:italic">Awarded on ${{new Date().toLocaleDateString()}}</div>
+        </div>
+    </main></div>
     <script>
         let state = JSON.parse(localStorage.getItem('webbook_{project["id"]}') || '{{"xp":0,"completed":[]}}');
-        function updateUI() {{
-            document.getElementById('xp').textContent = state.xp;
-            document.getElementById('completed').textContent = state.completed.length;
-            document.getElementById('progress').style.width = (state.completed.length / {len(chapters)} * 100) + '%';
-            document.querySelectorAll('.toc-link').forEach((link, i) => {{ if (state.completed.includes(i)) link.classList.add('completed'); }});
-            document.querySelectorAll('.complete-btn').forEach((btn, i) => {{ if (state.completed.includes(i)) {{ btn.textContent = '✓ Completed'; btn.classList.add('done'); btn.disabled = true; }} }});
+        let selectedOptions = {{}};
+        function selectOption(chIdx, qIdx, oIdx) {{
+            selectedOptions[`${{chIdx}}-${{qIdx}}`] = oIdx;
+            const quizEl = document.getElementById(`quiz-${{chIdx}}`);
+            const qs = quizEl.querySelectorAll('.quiz-q');
+            const opts = qs[qIdx].querySelectorAll('.quiz-opt');
+            opts.forEach((opt, i) => opt.classList.toggle('selected', i === oIdx));
+        }}
+        function submitQuiz(i) {{
+            const quiz = document.getElementById(`quiz-${{i}}`);
+            const qs = quiz.querySelectorAll('.quiz-q');
+            let correct = 0;
+            qs.forEach((q, qIdx) => {{
+                const selected = selectedOptions[`${{i}}-${{qIdx}}`];
+                const correctIdx = parseInt(q.dataset.correct);
+                const opts = q.querySelectorAll('.quiz-opt');
+                if (selected === correctIdx) correct++;
+                opts.forEach((opt, oIdx) => {{
+                    if (oIdx === correctIdx) opt.classList.add('correct');
+                    else if (oIdx === selected) opt.classList.add('wrong');
+                }});
+                q.querySelector('.explanation').style.display = 'block';
+            }});
+            if (correct === qs.length) {{
+                document.getElementById(`submit-${{i}}`).style.display = 'none';
+                document.getElementById(`btn-${{i}}`).style.display = 'block';
+                completeChapter(i);
+            }}
         }}
         function completeChapter(index) {{
             if (state.completed.includes(index)) return;
-            state.completed.push(index);
-            state.xp += 10;
-            localStorage.setItem('webbook_{project["id"]}', JSON.stringify(state));
+            state.completed.push(index); state.xp += 10;
+            localStorage.setItem('webbook_{project["id"]}', JSON.stringify(state)); 
+            
+            confetti({{
+                particleCount: 100,
+                spread: 70,
+                origin: {{ y: 0.6 }}
+            }});
+            
             updateUI();
+            checkBadges();
         }}
+        function updateUI() {{
+            document.getElementById('xp').textContent = state.xp;
+            document.getElementById('cert-xp').textContent = state.xp;
+            document.getElementById('completed').textContent = state.completed.length;
+            document.getElementById('progress').style.width = (state.completed.length / {len(chapters)} * 100) + '%';
+            document.querySelectorAll('.toc-link').forEach((link, i) => {{ if (state.completed.includes(i)) link.classList.add('completed'); }});
+            document.querySelectorAll('.complete-btn').forEach((btn, i) => {{ if (state.completed.includes(i)) {{ btn.textContent = '✓ Completed'; btn.classList.add('done'); btn.disabled = true; btn.style.display='block'; }} }});
+            
+            if (state.completed.length === {len(chapters)}) {{
+                confetti({{
+                    particleCount: 200,
+                    spread: 160,
+                    origin: {{ y: 0.6 }},
+                    colors: ['#8B5CF6', '#D8B4FE', '#ffffff']
+                }});
+            }}
+        }}
+        // Init Widgets
+        document.querySelectorAll('.interactive-audio').forEach(el => {{
+            const src = el.dataset.src; const title = el.dataset.title || 'Audio Lesson';
+            el.innerHTML = `<div class="audio-widget"><button onclick="this.nextElementSibling.paused ? this.nextElementSibling.play() : this.nextElementSibling.pause()" style="background:var(--primary);color:white;border:none;width:50px;height:50px;border-radius:25px;cursor:pointer">▶</button><audio src="${{src}}"></audio><div><div style="font-weight:600;font-size:0.9rem">${{title}}</div><div style="height:4px;width:150px;background:#ddd;margin-top:5px;border-radius:2px"></div></div></div>`;
+        }});
+        document.querySelectorAll('.interactive-video').forEach(el => {{
+            const url = el.dataset.url;
+            let embed = url;
+            if (url.includes('youtube.com/watch')) embed = `https://www.youtube.com/embed/${{url.split('v=')[1]}}`;
+            else if (url.includes('vimeo.com/')) embed = `https://player.vimeo.com/video/${{url.split('/').pop()}}`;
+            el.innerHTML = `<div class="video-container">${{url.endsWith('.mp4') ? `<video src="${{url}}" controls></video>` : `<iframe src="${{embed}}" allowfullscreen></iframe>`}}</div>`;
+        }});
+        document.querySelectorAll('.interactive-flashcards').forEach(el => {{
+            const cards = JSON.parse(el.dataset.cards || '[]');
+            if (cards.length) {{
+                el.innerHTML = `<div class="flashcard" onclick="this.classList.toggle('flipped')"><div class="flashcard-inner"><div class="flashcard-front"><span>QUESTION</span><p style="font-size:1.2rem;font-weight:600">${{cards[0].q}}</p></div><div class="flashcard-back"><span>ANSWER</span><p style="font-size:1.2rem;font-weight:600">${{cards[0].a}}</p></div></div></div>`;
+            }}
+        }});
+        document.querySelectorAll('.interactive-accordion').forEach(el => {{
+            const items = JSON.parse(el.dataset.items || '[]');
+            el.innerHTML = items.map(it => `<div class="accordion-item" onclick="this.classList.toggle('open')"><div class="accordion-header">${{it.title}}<span>+</span></div><div class="accordion-content">${{it.content}}</div></div>`).join('');
+        }});
+        document.querySelectorAll('.interactive-tabs').forEach(el => {{
+            const tabs = JSON.parse(el.dataset.tabs || '[]');
+            const header = `<div class="tabs-header">${{tabs.map((t, idx) => `<button class="tab-btn ${{idx==0?'active':''}}" onclick="this.parentElement.nextElementSibling.children[${{idx}}].style.display='block'; Array.from(this.parentElement.children).forEach((b,i)=>{{b.classList.toggle('active',i==${{idx}}); if(i!=${{idx}}) this.parentElement.nextElementSibling.children[i].style.display='none' }})">${{t.label}}</button>`).join('')}}</div>`;
+            const content = `<div class="tabs-content">${{tabs.map((t, idx) => `<div class="tab-content" style="display:${{idx==0?'block':'none'}}">${{t.content}}</div>`).join('')}}</div>`;
+            el.innerHTML = `<div class="tabs-container">${{header}}${{content}}</div>`;
+        }});
+        document.querySelectorAll('.interactive-poll').forEach(el => {{
+            const q = el.dataset.question;
+            const opts = JSON.parse(el.dataset.options || '[]');
+            el.innerHTML = `<div class="poll-container"><h4>${{q}}</h4>${{opts.map(o => `<button class="quiz-opt" style="width:100%;margin-bottom:0.5rem" onclick="this.parentElement.innerHTML='<p>✅ Thanks for voting!</p>'">${{o}}</button>`).join('')}}</div>`;
+        }});
+        document.querySelectorAll('.interactive-code').forEach(el => {{
+            const code = el.dataset.code; const lang = el.dataset.lang || 'code';
+            el.innerHTML = `<div class="code-block"><div class="code-lang">${{lang}}</div><pre><code>${{code}}</code></pre></div>`;
+        }});
+        document.querySelectorAll('.interactive-wheel').forEach(el => {{
+            const items = JSON.parse(el.dataset.items || '[]');
+            el.innerHTML = `<div class="wheel-container" style="text-align:center;margin:2rem 0">
+                <div class="wheel-canvas-container" style="position:relative;width:260px;height:260px;margin:0 auto">
+                    <div class="wheel-pointer" style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;border-top:25px solid var(--primary);z-index:10"></div>
+                    <div class="wheel" style="width:100%;height:100%;border-radius:50%;border:5px solid var(--primary);position:relative;overflow:hidden;transition:transform 3s cubic-bezier(0.15, 0, 0.15, 1)">
+                        ${{items.map((it, idx) => `<div class="wheel-segment" style="position:absolute;top:0;left:50%;width:2px;height:50%;background:rgba(0,0,0,0.1);transform-origin:bottom;transform:translateX(-50%) rotate(${{idx * (360/items.length)}}deg)"></div>`).join('')}}
+                    </div>
+                </div>
+                <button class="complete-btn" style="margin-top:1.5rem;width:auto" onclick="spinWheel(this)">SPIN THE WHEEL</button>
+                <p class="wheel-result" style="margin-top:1rem;font-weight:bold;color:var(--primary);display:none"></p>
+            </div>`;
+        }});
+
+        function spinWheel(btn) {{
+            const wheel = btn.previousElementSibling.querySelector('.wheel');
+            const result = btn.nextElementSibling;
+            const items = JSON.parse(wheel.parentElement.parentElement.parentElement.querySelector('.interactive-wheel').dataset.items);
+            const rotation = 1800 + Math.random() * 360;
+            wheel.style.transform = `rotate(${{rotation}}deg)`;
+            btn.disabled = true;
+            setTimeout(() => {{
+                const actualRotation = rotation % 360;
+                const index = Math.floor(((360 - (actualRotation % 360)) % 360) / (360 / items.length));
+                result.textContent = "Result: " + items[index];
+                result.style.display = 'block';
+                btn.disabled = false;
+            }}, 3000);
+        }}
+
+        // Badges & Certificates
+        function checkBadges() {{
+            const badgeContainer = document.getElementById('badge-list');
+            if (!badgeContainer) return;
+            badgeContainer.innerHTML = '';
+            
+            const badges = [
+                {{id: "first_chapter", name: "First Step", icon: "🎯", req: 1}},
+                {{id: "bookworm", name: "Bookworm", icon: "📚", req: 5}},
+                {{id: "champion", name: "Champion", icon: "👑", req: {len(chapters)}}}
+            ];
+
+            badges.forEach(b => {{
+                if (state.completed.length >= b.req) {{
+                    badgeContainer.innerHTML += `<div class="badge-item" title="${{b.name}}">${{b.icon}}</div>`;
+                }}
+            }});
+
+            if (state.completed.length === {len(chapters)}) {{
+                document.getElementById('certificate-area').style.display = 'block';
+            }}
+        }}
+
         updateUI();
+        checkBadges();
     </script>
 </body>
 </html>'''
@@ -1161,7 +1657,7 @@ def generate_webbook_html(project: dict, chapters: list) -> str:
 async def get_progress(project_id: str, request: Request):
     user = await require_auth(request)
     
-    progress = await db.user_progress.find_one(
+    progress = db.user_progress.find_one(
         {"user_id": user.user_id, "project_id": project_id}, {"_id": 0}
     )
     
@@ -1175,7 +1671,7 @@ async def get_progress(project_id: str, request: Request):
             "bookmarks": [],
             "last_activity": datetime.now(timezone.utc).isoformat()
         }
-        await db.user_progress.insert_one(progress)
+        db.user_progress.insert_one(progress)
     
     return progress
 
@@ -1183,19 +1679,19 @@ async def get_progress(project_id: str, request: Request):
 async def complete_chapter(project_id: str, request: Request, chapter_id: str = Form(...)):
     user = await require_auth(request)
     
-    progress = await db.user_progress.find_one(
+    progress = db.user_progress.find_one(
         {"user_id": user.user_id, "project_id": project_id}, {"_id": 0}
     )
     
     if not progress:
         progress = {"user_id": user.user_id, "project_id": project_id, "completed_chapters": [], "xp_earned": 0, "badges": [], "bookmarks": []}
-        await db.user_progress.insert_one(progress)
+        db.user_progress.insert_one(progress)
     
     xp_earned = 10
     new_badges = []
     
     if chapter_id not in progress.get('completed_chapters', []):
-        await db.user_progress.update_one(
+        db.user_progress.update_one(
             {"user_id": user.user_id, "project_id": project_id},
             {
                 "$addToSet": {"completed_chapters": chapter_id},
@@ -1210,23 +1706,23 @@ async def complete_chapter(project_id: str, request: Request, chapter_id: str = 
 async def toggle_bookmark(project_id: str, request: Request, chapter_id: str = Form(...)):
     user = await require_auth(request)
     
-    progress = await db.user_progress.find_one({"user_id": user.user_id, "project_id": project_id}, {"_id": 0})
+    progress = db.user_progress.find_one({"user_id": user.user_id, "project_id": project_id}, {"_id": 0})
     
     if not progress:
-        await db.user_progress.insert_one({
+        db.user_progress.insert_one({
             "user_id": user.user_id, "project_id": project_id, 
             "completed_chapters": [], "xp_earned": 0, "badges": [], "bookmarks": [chapter_id]
         })
         return {"bookmarked": True}
     
     if chapter_id in progress.get('bookmarks', []):
-        await db.user_progress.update_one(
+        db.user_progress.update_one(
             {"user_id": user.user_id, "project_id": project_id},
             {"$pull": {"bookmarks": chapter_id}}
         )
         return {"bookmarked": False}
     else:
-        await db.user_progress.update_one(
+        db.user_progress.update_one(
             {"user_id": user.user_id, "project_id": project_id},
             {"$addToSet": {"bookmarks": chapter_id}}
         )
@@ -1236,17 +1732,106 @@ async def toggle_bookmark(project_id: str, request: Request, chapter_id: str = F
 async def get_badges():
     return [b.model_dump() for b in BADGES]
 
-# Include router
-app.include_router(api_router)
+# ==================== AI ENDPOINTS ====================
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+@api_router.post("/ai/enhance")
+async def ai_enhance(request: Request):
+    """Enhance and polish selected text using Gemini AI"""
+    user = await require_auth(request)
+    body = await request.json()
+    text = body.get("text")
+    
+    if not text:
+        raise HTTPException(status_code=400, detail="text required")
+    
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    prompt = f"""
+    Enhance and polish the following text for a professional webbook/e-course. 
+    Make it more engaging, educational, and well-structured.
+    Keep the original meaning but improve the flow and vocabulary.
+    Text: "{text}"
+    """
+    
+    response = model.generate_content(prompt)
+    return {"enhanced_text": response.text}
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    pass # No client to close for JSON DB
+@api_router.post("/ai/generate-content")
+async def ai_generate_content(request: Request):
+    """Generate chapter content based on a title and context"""
+    user = await require_auth(request)
+    body = await request.json()
+    title = body.get("title")
+    context = body.get("context", "")
+    
+    if not title:
+        raise HTTPException(status_code=400, detail="title required")
+    
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    prompt = f"""
+    Write a comprehensive and engaging chapter for a webbook.
+    Title: {title}
+    Context/Outline: {context}
+    
+    Requirements:
+    - Educational and professional tone.
+    - Use HTML tags like <h3>, <p>, <strong>, <ul>, <li>.
+    - Add at least one practical example.
+    - Do not include <html> or <body> tags. Just the content.
+    """
+    
+    response = model.generate_content(prompt)
+    return {"content": response.text}
+
+@api_router.post("/ai/generate-quiz")
+async def ai_generate_quiz(request: Request):
+    """Generate quiz questions based on chapter content"""
+    user = await require_auth(request)
+    body = await request.json()
+    content = body.get("content")
+    
+    if not content:
+        raise HTTPException(status_code=400, detail="content required")
+    
+    if not GEMINI_API_KEY:
+        # Fallback for development if API key is missing
+        return {
+            "questions": [
+                {"question": "What is the main topic of this chapter?", "options": ["Topic A", "Topic B", "Topic C", "Topic D"], "correct_answer": 0, "explanation": "This is a fallback question."},
+                {"question": "How do you apply this knowledge?", "options": ["Option 1", "Option 2", "Option 3", "Option 4"], "correct_answer": 1, "explanation": "This is another fallback question."}
+            ]
+        }
+
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    prompt = f"""
+    Based on the following chapter content, generate a high-quality quiz with 3-5 multiple-choice questions.
+    Return ONLY a JSON object with a 'questions' array. Each question must have:
+    - 'question' (string)
+    - 'options' (array of 4 strings)
+    - 'correct_answer' (integer 0-3)
+    - 'explanation' (string)
+    
+    Content:
+    {content[:4000]}
+    """
+    
+    try:
+        response = model.generate_content(prompt)
+        # Extract JSON if Gemini wraps it in markdown blocks
+        json_str = response.text
+        if "```json" in json_str:
+            json_str = json_str.split("```json")[1].split("```")[0].strip()
+        elif "```" in json_str:
+            json_str = json_str.split("```")[1].split("```")[0].strip()
+        
+        return json.loads(json_str)
+    except Exception as e:
+        logger.error(f"AI Quiz Generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to generate quiz with AI")
+
+# Router already included above

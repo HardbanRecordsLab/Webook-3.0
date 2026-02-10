@@ -1,0 +1,796 @@
+
+jak stworzyc app do generowania ebookow albo z promptow albo z dostarczonej tresci, obrazwów,audio w jeden profesjonalny ebook z odpowiednim leyoutem, tłem cala szata graficzna
+
+16 sty
+Stworzenie aplikacji do generowania profesjonalnych ebooków to fascynujący projekt! Oto kompleksowy plan implementacji:
+
+Architektura aplikacji
+Frontend (React/Next.js):
+
+Interfejs do wprowadzania promptów lub uploadowania treści
+Edytor WYSIWYG do dostosowywania layoutu
+Podgląd ebooka w czasie rzeczywistym
+System zarządzania mediami (obrazy, audio)
+Backend (Node.js/Python):
+
+API do generowania treści (integracja z Claude API lub OpenAI)
+Przetwarzanie obrazów i audio
+Generowanie plików EPUB/PDF/MOBI
+Kluczowe komponenty
+1. Generator treści z AI:
+
+javascript
+// Integracja z Claude API do generowania treści
+const generateContent = async (prompt, style) => {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4000,
+      messages: [{ 
+        role: 'user', 
+        content: `Napisz rozdział ebooka na temat: ${prompt}. Styl: ${style}` 
+      }]
+    })
+  });
+};
+2. System szablonów:
+
+Predefiniowane szablony layoutów (minimalistyczny, elegancki, modern)
+Konfigurowalne czcionki, kolory, marginesy
+Responsive design dla różnych czytników
+3. Przetwarzanie mediów:
+
+Kompresja i optymalizacja obrazów (Sharp, ImageMagick)
+Konwersja audio do formatu kompatybilnego z ebookami
+Generowanie okładek z AI (DALL-E, Midjourney API)
+4. Eksport do różnych formatów:
+
+EPUB (standard dla większości czytników) - użyj epub-gen lub archiver
+PDF (Puppeteer, jsPDF, PDFKit)
+MOBI (Calibre w tle poprzez CLI)
+Stack technologiczny (propozycja)
+Wariant React:
+
+Next.js 14+ (frontend + API routes)
+TailwindCSS + shadcn/ui (UI)
+Zustand/Redux (state management)
+epub-gen-memory (generowanie EPUB)
+jsPDF (generowanie PDF)
+Cloudinary/AWS S3 (hosting mediów)
+Wariant full-stack Python:
+
+FastAPI (backend)
+React (frontend)
+ebooklib (generowanie EPUB)
+ReportLab (generowanie PDF)
+Pillow (przetwarzanie obrazów)
+Funkcje MVP (Minimum Viable Product)
+Import treści (tekst, markdown, docx)
+Generowanie treści z promptu przez AI
+Podstawowy edytor formatowania
+3-5 szablonów graficznych
+Upload obrazów do rozdziałów
+Eksport do EPUB i PDF
+Automatyczne generowanie spisu treści
+Podgląd przed eksportem
+Zaawansowane funkcje
+Automatyczne generowanie ilustracji przez AI do rozdziałów
+Text-to-speech dla wersji audio
+Wielojęzyczne wsparcie i tłumaczenie
+Współpraca w czasie rzeczywistym (multiple authors)
+Marketplace szablonów
+AI styling (analiza treści → dobór odpowiedniego designu)
+Integracja z platformami dystrybucji (Amazon KDP, Smashwords)
+Monetyzacja
+Freemium (limit ebooków/miesięcznie)
+Subskrypcja (unlimited + premium templates)
+Marketplace szablonów (revenue share)
+White-label dla wydawnictw
+Chcesz, żebym stworzył prototyp takiej aplikacji jako artifact? Mogę zbudować wersję demonstracyjną z podstawowymi funkcjami, którą będziesz mógł przetestować i rozwijać dalej.
+
+to teraz jak w 24h stworzyc ja z budrzetem zero
+
+16 sty
+Okej, challenge accepted! Oto plan na 24h z budżetem zero:
+
+Strategia "Zero Budget MVP"
+Godziny 0-4: Setup i fundament
+
+Claude Artifacts jako środowisko (za darmo, masz już dostęp!)
+React + TailwindCSS (wbudowane w artifacts)
+Wszystko działa w przeglądarce - zero kosztów hostingu
+Godziny 4-10: Core functionality
+
+Edytor tekstu z markdown
+3 gotowe szablony CSS
+Generator layoutu
+Godziny 10-16: AI integration
+
+Claude API przez artifacts (to czym teraz rozmawiasz!)
+Generowanie treści z promptów
+Stylizacja tekstu
+Godziny 16-20: Export
+
+Generowanie HTML → konwersja do PDF przez html2pdf.js
+EPUB przez epub-gen z CDN
+Godziny 20-24: Polish & testing
+
+Stwórzmy to TERAZ!
+Zbuduję dla Ciebie działającą aplikację, która:
+
+✅ Generuje treść z promptów (przez Claude API)
+✅ Pozwala dodać własną treść
+✅ Ma profesjonalne szablony
+✅ Eksportuje do PDF
+✅ Wszystko w przeglądarce, zero kosztów
+Chcesz, żebym stworzył pełną, działającą wersję tej aplikacji teraz? Będzie gotowa za ~2 minuty i będziesz mógł już generować ebooki!
+
+Powiedz "tak" a zacznę budować, albo powiedz mi jakie konkretne funkcje są dla Ciebie najważniejsze (np. więcej na AI, więcej na design, export do konkretnego formatu).
+
+najwazniesze aby dostarczona tresc i obrazy wlozyc w ciekawa odpowiednia szate graficzna z pro layoutem
+
+16 sty
+Rozumiem - priorytet to profesjonalny design i layout dla gotowej treści! Tworzę aplikację, która zamieni Twoje treści i obrazy w pięknie wyglądający ebook.
+
+Professional Ebook Generator
+Interactive artifact 
+Professional Ebook Generator
+Interactive artifact 
+Gotowe! 🎉 Oto Twoja profesjonalna aplikacja do generowania ebooków.
+
+Jak z niej korzystać:
+1. Podstawowe informacje:
+
+Wpisz tytuł książki i autora
+2. Wybierz motyw graficzny:
+
+Elegant Serif - klasyczny, elegancki styl z gradienty
+Modern Sans - nowoczesny z fioletowym tłem
+Minimal Black - minimalistyczny czarno-biały
+Nature Inspired - naturalny, zielony
+Luxury Gold - luksusowy ze złotymi akcentami
+3. Dodaj rozdziały:
+
+Kliknij "Dodaj rozdział"
+Wpisz tytuł i wklej treść (rozdziel akapity podwójnym enterem)
+Dodaj obrazy przez "Dodaj obrazy"
+Obrazy możesz usuwać najeżdżając na nie
+4. Podgląd:
+
+Kliknij "Podgląd" aby zobaczyć jak wygląda Twój ebook
+Sprawdź różne motywy
+5. Eksport:
+
+Kliknij "Eksportuj do PDF"
+Otworzy się nowe okno z gotowym ebookiem
+Kliknij Ctrl+P lub Cmd+P aby zapisać jako PDF
+Co wyróżnia tę aplikację:
+✅ Profesjonalny layout - każdy motyw ma przemyślaną typografię, kolory i układ ✅ Drop cap - pierwsza litera akapitu jest ozdobnie powiększona ✅ Piękne czcionki - Google Fonts (Playfair, Lora, Cinzel, Cormorant) ✅ Obrazy z cieniami - profesjonalna prezentacja grafik ✅ Responsive - działa na telefonie i komputerze ✅ Zero kosztów - wszystko działa w przeglądarce
+
+Całkowity czas budowy: ~10 minut. Budżet: 0 PLN 💰
+
+Spróbuj! Dodaj kilka rozdziałów, wrzuć obrazy i zobacz jak profesjonalnie wygląda wynik.
+
+a jakby miala  gotowe temle
+
+16 sty
+Świetny pomysł! Dodaję gotowe szablony z wypełnioną treścią jako starter templates. Zaktualizuję aplikację:
+
+Professional Ebook Generator
+Interactive artifact ∙ Version 2 
+mam trche szablonoiw mize sie przydarza?'
+
+16 sty
+Jasne! Dodaję więcej różnorodnych szablonów. Oto kompletna wersja z pełną biblioteką szablonów:
+
+Professional Ebook Generator
+Interactive artifact ∙ Version 3 
+An error occurred while trying to run the generated artifact.
+Unexpected token, expected ";" (4:27)
+
+  Can you fix this error in ebook-generator-pro?
+
+16 sty
+An error occurred while trying to run the generated artifact.
+Unexpected token, expected ";" (4:27)
+
+  Can you fix this error in ebook-generator-pro?
+
+10:15
+Professional Ebook Generator
+Interactive artifact ∙ Version 4 
+An error occurred while trying to run the generated artifact.
+Unexpected token, expected ";" (4:27)
+
+  Can you fix this error in ebook-generator-pro?
+
+10:19
+An error occurred while trying to run the generated artifact.
+Unexpected token, expected ";" (4:27)
+
+  Can you fix this error in ebook-generator-pro?
+
+10:19
+Przepraszam za błąd! Naprawiam całą aplikację od nowa:
+
+Professional Ebook Generator
+Interactive artifact ∙ Version 5 
+Gotowe! ✅ Aplikacja powinna teraz działać poprawnie.
+
+Dostępne gotowe szablony:
+
+📚 Podróżniczy - "Wędrówki po Europie" (motyw Nature)
+💼 Biznesowy - "Strategia Sukcesu" (motyw Modern)
+🍝 Kulinarny - "Sekrety Kuchni Włoskiej" (motyw Elegant)
+🎯 Rozwój osobisty - "Zmień swoje życie w 90 dni" (motyw Minimal)
+Kliknij przycisk "Szablony" w prawym górnym rogu, wybierz szablon i od razu możesz edytować i eksportować profesjonalny ebook!
+
+
+
+You are out of free messages until 3:00 PM
+Upgrade
+
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+import React, { useState } from 'react';
+import { Book, Download, Eye, Palette, Type, Layout, ImagePlus, X, Sparkles, FileText } from 'lucide-react';
+
+const EbookGenerator = () => {
+  const [chapters, setChapters] = useState([]);
+  const [bookTitle, setBookTitle] = useState('');
+  const [author, setAuthor] = useState('');
+  const [theme, setTheme] = useState('elegant');
+  const [preview, setPreview] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  const getTemplates = () => ({
+    podrozniczy: {
+      title: 'Wędrówki po Europie',
+      author: 'Jan Kowalski',
+      theme: 'nature',
+      chapters: [
+        {
+          id: 1001,
+          title: 'Paryż - Miasto Świateł',
+          content: 'Paryż zawsze był dla mnie miastem marzeń. Pierwszego dnia obudziłem się wcześnie, by zobaczyć wschód słońca nad Sekwaną.\n\nWieża Eiffla wyłaniała się z mgły jak stalowy strażnik miasta. Spacer bulwarami Seine to doświadczenie niezapomniane.',
+          images: []
+        }
+      ]
+    },
+    biznesowy: {
+      title: 'Strategia Sukcesu',
+      author: 'Anna Nowak',
+      theme: 'modern',
+      chapters: [
+        {
+          id: 2001,
+          title: 'Znalezienie właściwego problemu',
+          content: 'Największym błędem początkujących przedsiębiorców jest tworzenie rozwiązań szukających problemu.\n\nZamiast tego należy zacząć od głębokiego zrozumienia realnych wyzwań klientów.',
+          images: []
+        }
+      ]
+    },
+    kulinarny: {
+      title: 'Sekrety Kuchni Włoskiej',
+      author: 'Maria Rossi',
+      theme: 'elegant',
+      chapters: [
+        {
+          id: 3001,
+          title: 'Filozofia prostoty',
+          content: 'Kuchnia włoska opiera się na jakości składników. Świeże pomidory, dobra oliwa, aromatyczna bazylia.\n\nWłosi mówią meno è più - mniej znaczy więcej.',
+          images: []
+        }
+      ]
+    },
+    rozwoj: {
+      title: 'Zmień swoje życie w 90 dni',
+      author: 'Piotr Wiśniewski',
+      theme: 'minimal',
+      chapters: [
+        {
+          id: 4001,
+          title: 'Moc małych nawyków',
+          content: 'Nie potrzebujesz radykalnych zmian. Potrzebujesz małych codziennych działań powtarzanych konsekwentnie.\n\nNawyk to automatyczna reakcja - to nasza supermoc.',
+          images: []
+        }
+      ]
+    }
+  });
+
+  const themes = {
+    elegant: {
+      name: 'Elegant Serif',
+      bg: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      primary: '#2c3e50',
+      secondary: '#7f8c8d',
+      accent: '#3498db',
+      font: 'Georgia, serif',
+      titleFont: 'Playfair Display, serif'
+    },
+    modern: {
+      name: 'Modern Sans',
+      bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      primary: '#ffffff',
+      secondary: '#e0e7ff',
+      accent: '#fbbf24',
+      font: 'Inter, sans-serif',
+      titleFont: 'Montserrat, sans-serif'
+    },
+    minimal: {
+      name: 'Minimal Black',
+      bg: '#ffffff',
+      primary: '#000000',
+      secondary: '#666666',
+      accent: '#ff6b6b',
+      font: 'system-ui, sans-serif',
+      titleFont: 'system-ui, sans-serif'
+    },
+    nature: {
+      name: 'Nature Inspired',
+      bg: 'linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)',
+      primary: '#2d5016',
+      secondary: '#5a7c3a',
+      accent: '#8fbc8f',
+      font: 'Lora, serif',
+      titleFont: 'Merriweather, serif'
+    },
+    luxury: {
+      name: 'Luxury Gold',
+      bg: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+      primary: '#f4f4f4',
+      secondary: '#d4af37',
+      accent: '#ffd700',
+      font: 'Cormorant Garamond, serif',
+      titleFont: 'Cinzel, serif'
+    }
+  };
+
+  const loadTemplate = (templateKey) => {
+    const templates = getTemplates();
+    const template = templates[templateKey];
+    setBookTitle(template.title);
+    setAuthor(template.author);
+    setTheme(template.theme);
+    setChapters(template.chapters);
+    setShowTemplates(false);
+  };
+
+  const addChapter = () => {
+    setChapters([...chapters, {
+      id: Date.now(),
+      title: '',
+      content: '',
+      images: []
+    }]);
+  };
+
+  const updateChapter = (id, field, value) => {
+    setChapters(chapters.map(ch => 
+      ch.id === id ? { ...ch, [field]: value } : ch
+    ));
+  };
+
+  const handleImageUpload = (chapterId, e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setChapters(chapters.map(ch => 
+          ch.id === chapterId 
+            ? { ...ch, images: [...ch.images, event.target.result] }
+            : ch
+        ));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (chapterId, imageIndex) => {
+    setChapters(chapters.map(ch => 
+      ch.id === chapterId 
+        ? { ...ch, images: ch.images.filter((_, i) => i !== imageIndex) }
+        : ch
+    ));
+  };
+
+  const deleteChapter = (id) => {
+    setChapters(chapters.filter(ch => ch.id !== id));
+  };
+
+  const generatePDF = () => {
+    const printWindow = window.open('', '_blank');
+    const currentTheme = themes[theme];
+    
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${bookTitle}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:wght@400;600&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Inter:wght@400;600&family=Cormorant+Garamond:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    @page { size: A4; margin: 2cm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: ${currentTheme.font};
+      background: ${currentTheme.bg};
+      color: ${currentTheme.primary};
+      line-height: 1.8;
+    }
+    .cover {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      page-break-after: always;
+      padding: 3cm;
+    }
+    .cover h1 {
+      font-family: ${currentTheme.titleFont};
+      font-size: 4em;
+      color: ${currentTheme.primary};
+      margin-bottom: 1em;
+    }
+    .cover .ornament {
+      width: 250px;
+      height: 4px;
+      background: ${currentTheme.accent};
+      margin: 2em auto;
+    }
+    .cover .author {
+      font-size: 1.8em;
+      color: ${currentTheme.secondary};
+      font-style: italic;
+    }
+    .chapter {
+      page-break-before: always;
+      padding: 2cm 1.5cm;
+    }
+    .chapter-title {
+      font-family: ${currentTheme.titleFont};
+      font-size: 2.5em;
+      color: ${currentTheme.accent};
+      border-bottom: 3px solid ${currentTheme.accent};
+      padding-bottom: 0.3em;
+      margin-bottom: 1em;
+    }
+    .chapter-content {
+      font-size: 1.1em;
+      text-align: justify;
+      line-height: 1.9;
+    }
+    .chapter-content p {
+      margin-bottom: 1.2em;
+      text-indent: 2em;
+    }
+    .chapter-content p:first-of-type {
+      text-indent: 0;
+    }
+    .chapter-content p:first-of-type::first-letter {
+      font-size: 4em;
+      float: left;
+      line-height: 0.9;
+      margin: 0.05em 0.1em 0 0;
+      color: ${currentTheme.accent};
+      font-family: ${currentTheme.titleFont};
+    }
+    .chapter-image {
+      width: 100%;
+      max-width: 600px;
+      height: auto;
+      margin: 2em auto;
+      display: block;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      border-radius: 8px;
+    }
+    .image-caption {
+      text-align: center;
+      font-style: italic;
+      color: ${currentTheme.secondary};
+      margin-top: 0.5em;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="cover">
+    <h1>${bookTitle}</h1>
+    <div class="ornament"></div>
+    <div class="author">autor: ${author}</div>
+  </div>
+  ${chapters.map(ch => `
+    <div class="chapter">
+      <h2 class="chapter-title">${ch.title}</h2>
+      <div class="chapter-content">
+        ${ch.content.split('\n\n').map(p => `<p>${p}</p>`).join('')}
+        ${ch.images.map((img, i) => `
+          <img src="${img}" class="chapter-image" alt="Ilustracja ${i + 1}" />
+          <div class="image-caption">Ilustracja ${i + 1}</div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('')}
+</body>
+</html>`;
+    
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 500);
+  };
+
+  const currentTheme = themes[theme];
+  const templates = getTemplates();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Book className="w-8 h-8 md:w-10 md:h-10 text-indigo-600" />
+              <h1 className="text-2xl md:text-4xl font-bold text-gray-800">Ebook Generator Pro</h1>
+            </div>
+            <button
+              onClick={() => setShowTemplates(!showTemplates)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg"
+            >
+              <Sparkles className="w-5 h-5" />
+              <span className="hidden md:inline">Szablony</span>
+            </button>
+          </div>
+
+          {showTemplates && (
+            <div className="mb-6 p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <FileText className="w-6 h-6 text-purple-600" />
+                Wybierz gotowy szablon
+              </h3>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Object.entries(templates).map(([key, template]) => (
+                  <button
+                    key={key}
+                    onClick={() => loadTemplate(key)}
+                    className="p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-purple-400 hover:shadow-lg transition-all text-left"
+                  >
+                    <div className="font-bold text-gray-800 mb-1">{template.title}</div>
+                    <div className="text-sm text-gray-600 mb-2">{template.author}</div>
+                    <div className="text-xs text-purple-600">{template.chapters.length} rozdział</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Tytuł książki</label>
+              <input
+                type="text"
+                value={bookTitle}
+                onChange={(e) => setBookTitle(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors"
+                placeholder="Wprowadź tytuł..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Autor</label>
+              <input
+                type="text"
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors"
+                placeholder="Twoje imię..."
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Palette className="w-6 h-6 text-indigo-600" />
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800">Wybierz motyw graficzny</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+            {Object.entries(themes).map(([key, t]) => (
+              <button
+                key={key}
+                onClick={() => setTheme(key)}
+                className={`p-3 md:p-4 rounded-xl border-2 transition-all ${
+                  theme === key 
+                    ? 'border-indigo-600 shadow-lg scale-105' 
+                    : 'border-gray-200 hover:border-indigo-300'
+                }`}
+              >
+                <div 
+                  className="h-20 md:h-24 rounded-lg mb-2 md:mb-3" 
+                  style={{ background: t.bg }}
+                />
+                <div className="text-xs md:text-sm font-semibold text-gray-700">{t.name}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-6 mb-8">
+          {chapters.map((chapter, idx) => (
+            <div key={chapter.id} className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Layout className="w-5 h-5 md:w-6 md:h-6 text-indigo-600" />
+                  <h3 className="text-lg md:text-xl font-bold text-gray-800">Rozdział {idx + 1}</h3>
+                </div>
+                <button
+                  onClick={() => deleteChapter(chapter.id)}
+                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tytuł rozdziału</label>
+                  <input
+                    type="text"
+                    value={chapter.title}
+                    onChange={(e) => updateChapter(chapter.id, 'title', e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors"
+                    placeholder="Tytuł rozdziału..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Treść</label>
+                  <textarea
+                    value={chapter.content}
+                    onChange={(e) => updateChapter(chapter.id, 'content', e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none h-48 resize-y"
+                    placeholder="Wklej swoją treść tutaj... (rozdziel akapity podwójnym enterem)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Obrazy do rozdziału</label>
+                  <input
+                    type="file"
+                    id={`img-${chapter.id}`}
+                    onChange={(e) => handleImageUpload(chapter.id, e)}
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor={`img-${chapter.id}`}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors cursor-pointer"
+                  >
+                    <ImagePlus className="w-5 h-5" />
+                    Dodaj obrazy
+                  </label>
+                  
+                  {chapter.images.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                      {chapter.images.map((img, imgIdx) => (
+                        <div key={imgIdx} className="relative group">
+                          <img src={img} alt={`Obraz ${imgIdx + 1}`} className="w-full h-32 object-cover rounded-lg shadow-md" />
+                          <button
+                            onClick={() => removeImage(chapter.id, imgIdx)}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-3 md:gap-4 mb-8">
+          <button
+            onClick={addChapter}
+            className="flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-lg text-sm md:text-base"
+          >
+            <Type className="w-5 h-5" />
+            Dodaj rozdział
+          </button>
+          
+          <button
+            onClick={() => setPreview(!preview)}
+            disabled={chapters.length === 0}
+            className="flex items-center gap-2 px-5 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
+          >
+            <Eye className="w-5 h-5" />
+            {preview ? 'Ukryj podgląd' : 'Podgląd'}
+          </button>
+          
+          <button
+            onClick={generatePDF}
+            disabled={!bookTitle || chapters.length === 0}
+            className="flex items-center gap-2 px-5 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
+          >
+            <Download className="w-5 h-5" />
+            Eksportuj do PDF
+          </button>
+        </div>
+
+        {preview && chapters.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+            <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-6">Podgląd ebooka</h3>
+            <div 
+              className="p-8 md:p-12 rounded-xl overflow-hidden"
+              style={{ 
+                background: currentTheme.bg,
+                fontFamily: currentTheme.font,
+                color: currentTheme.primary
+              }}
+            >
+              <div className="text-center mb-16">
+                <h1 
+                  className="text-3xl md:text-5xl mb-4 font-bold"
+                  style={{ 
+                    fontFamily: currentTheme.titleFont,
+                    color: currentTheme.primary 
+                  }}
+                >
+                  {bookTitle}
+                </h1>
+                <div 
+                  className="w-32 md:w-48 h-1 mx-auto my-8"
+                  style={{ background: currentTheme.accent }}
+                />
+                <p className="text-xl md:text-2xl italic" style={{ color: currentTheme.secondary }}>
+                  autor: {author}
+                </p>
+              </div>
+
+              {chapters.map((ch) => (
+                <div key={ch.id} className="mb-16">
+                  <h2 
+                    className="text-2xl md:text-3xl mb-6 pb-2 border-b-2 font-bold"
+                    style={{ 
+                      fontFamily: currentTheme.titleFont,
+                      color: currentTheme.accent,
+                      borderColor: currentTheme.accent
+                    }}
+                  >
+                    {ch.title}
+                  </h2>
+                  <div className="text-base md:text-lg leading-relaxed">
+                    {ch.content.split('\n\n').map((para, pIdx) => (
+                      <p key={pIdx} className="mb-4 text-justify first:indent-0 indent-8">
+                        {para}
+                      </p>
+                    ))}
+                    {ch.images.map((img, imgIdx) => (
+                      <div key={imgIdx} className="my-8">
+                        <img 
+                          src={img} 
+                          alt={`Ilustracja ${imgIdx + 1}`} 
+                          className="max-w-full h-auto mx-auto rounded-lg shadow-xl"
+                        />
+                        <p className="text-center italic mt-2 text-sm" style={{ color: currentTheme.secondary }}>
+                          Ilustracja {imgIdx + 1}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default EbookGenerator;
+Tworzenie aplikacji do generowania ebooków - Claude

@@ -1,0 +1,24 @@
+[
+  {
+    "id": "36cd5261-1f0c-4ec7-ab86-9f11056dd1b3",
+    "user_id": "user_4574834c2ff7",
+    "title": "lkjklk;",
+    "description": "",
+    "cover_image": "",
+    "settings": {
+      "primary_color": "#14532D",
+      "secondary_color": "#F4F4F5",
+      "accent_color": "#A27B5C",
+      "font_heading": "Fraunces",
+      "font_body": "Manrope",
+      "show_progress": true,
+      "show_toc": true,
+      "enable_tts": true
+    },
+    "total_chapters": 0,
+    "status": "paid",
+    "payment_status": "paid",
+    "created_at": "2026-02-08T19:52:22.954700+00:00",
+    "updated_at": "2026-02-08T19:52:22.954705+00:00"
+  }
+]

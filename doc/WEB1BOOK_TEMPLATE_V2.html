@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[TYTUŁ WEBBOOKA] - Interaktywny Kurs Online</title>
+    <meta name="description" content="[KRÓTKI OPIS WEBBOOKA - max 160 znaków]">
+    <meta name="author" content="[AUTOR/TWOJA NAZWA]">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            margin-top: 70px;
+            position: fixed;
+            left: 0;
+            height: calc(100vh - 70px);
+            z-index: 999;
+        }
+
+        .sidebar-section {
+            padding: 1.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .sidebar-title {
+            padding: 0 1.5rem;
+            font-weight: bold;
+            color: #2563eb;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.8rem;
+        }
+
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            color: #666;
+            text-decoration: none;
+            border-left: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .sidebar-link:hover {
+            background-color: #f0f7ff;
+            color: #2563eb;
+            border-left-color: #2563eb;
+        }
+
+        .sidebar-link.active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-left-color: #2563eb;
+            font-weight: 600;
+        }
+
+        /* MAIN CONTENT */
+        main {
+            margin-left: 280px;
+            margin-top: 70px;
+            flex: 1;
+            background: white;
+            min-height: calc(100vh - 70px);
+        }
+
+        .page {
+            display: none;
+            padding: 3rem 4rem;
+            max-width: 900px;
+            margin: 0 auto;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 1.5rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        /* CONTENT BLOCKS */
+        .content-block {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border-left: 4px solid #e5e7eb;
+        }
+
+        .content-block.highlight {
+            background: #eff6ff;
+            border-left-color: #2563eb;
+        }
+
+        .content-block.warning {
+            background: #fef3c7;
+            border-left-color: #f59e0b;
+        }
+
+        .content-block.danger {
+            background: #fee2e2;
+            border-left-color: #ef4444;
+        }
+
+        .content-block.success {
+            background: #ecfdf5;
+            border-left-color: #10b981;
+        }
+
+        /* TYPOGRAPHY */
+        h2 {
+            font-size: 1.5rem;
+            color: #1f2937;
+            margin: 2rem 0 1rem 0;
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            color: #374151;
+            margin: 1.5rem 0 0.8rem 0;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: #555;
+        }
+
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+
+        /* MEDIA */
+        .media-container {
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .media-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .media-caption {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.8rem;
+            font-style: italic;
+        }
+
+        /* AUDIO PLAYER */
+        .audio-player {
+            background: #f0f7ff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border: 1px solid #bfdbfe;
+        }
+
+        .audio-player-title {
+            font-weight: 600;
+            color: #2563eb;
+            margin-bottom: 1rem;
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        /* VIDEO */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            background: #000;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* WORKSHEET */
+        .worksheet {
+            background: #f9fafb;
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            border: 2px solid #e5e7eb;
+        }
+
+        .worksheet-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="number"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        /* QUIZ */
+        .quiz {
+            background: #f9fafb;
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            border: 2px solid #e5e7eb;
+        }
+
+        .quiz-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+        }
+
+        .quiz-question {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .quiz-question:last-child {
+            border-bottom: none;
+        }
+
+        .quiz-question-text {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 1rem;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .quiz-option {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-option:hover {
+            background: #f0f7ff;
+            border-color: #2563eb;
+        }
+
+        .quiz-option input[type="radio"] {
+            margin-right: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1e40af;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .btn-save {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #059669;
+        }
+
+        /* FOOTER */
+        footer {
+            background: #1f2937;
+            color: #d1d5db;
+            padding: 3rem 2rem;
+            margin-left: 280px;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #d1d5db;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                width: 250px;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            main {
+                margin-left: 0;
+            }
+
+            footer {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .page {
+                padding: 2rem 1.5rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* PROGRESS BAR */
+        .progress-container {
+            background: #f0f7ff;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .progress-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #1e40af);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header>
+        <div class="logo">
+            <div class="logo-icon">📚</div>
+            <span>[LOGO/NAZWA WEBBOOKA]</span>
+        </div>
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+    </header>
+
+    <div class="container">
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="sidebar" id="sidebar">
+            <!-- SEKCJA: WSTĘP I INFORMACJE PRAWNE -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Wstęp</div>
+                <a href="#" class="sidebar-link active" onclick="showPage('page-intro')">Strona Tytułowa</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-about')">O Autorze</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-copyright')">Prawa Autorskie</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-disclaimer')">Disclaimer</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-when-not')">Kiedy NIE Korzystać</a>
+            </div>
+
+            <!-- SEKCJA: WPROWADZENIE -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Wprowadzenie</div>
+                <a href="#" class="sidebar-link" onclick="showPage('page-for-whom')">Do Kogo Jest Ten Program</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-what-is')">Co To Jest [TEMAT]</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-what-does')">Co Program Robi</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-how-to-use')">Jak Korzystać</a>
+            </div>
+
+            <!-- SEKCJA: CZĘŚĆ I - PODSTAWY -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Część I - Podstawy</div>
+                <a href="#" class="sidebar-link" onclick="showPage('page-1-1')">1.1 Temat Podstawowy</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-1-2')">1.2 Kluczowe Pojęcia</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-1-3')">1.3 Jak To Działa</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-1-4')">1.4 Bezpieczeństwo</a>
+            </div>
+
+            <!-- SEKCJA: CZĘŚĆ II - PRAKTYKA -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Część II - Praktyka</div>
+                <a href="#" class="sidebar-link" onclick="showPage('page-2-1')">2.1 Zasady Pracy</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-2-2')">2.2 Technika Krok po Kroku</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-2-3')">2.3 Ćwiczenia</a>
+            </div>
+
+            <!-- SEKCJA: CZĘŚĆ III - PROGRAM -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Część III - Program</div>
+                <a href="#" class="sidebar-link" onclick="showPage('page-3-1')">3.1 Tydzień 1</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-3-2')">3.2 Tydzień 2</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-3-3')">3.3 Tydzień 3</a>
+            </div>
+
+            <!-- SEKCJA: MATERIAŁY DODATKOWE -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Materiały Dodatkowe</div>
+                <a href="#" class="sidebar-link" onclick="showPage('page-faq')">FAQ - Pytania</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-resources')">Zasoby</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-support')">Wsparcie</a>
+            </div>
+
+            <!-- SEKCJA: ZAKOŃCZENIE -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Zakończenie</div>
+                <a href="#" class="sidebar-link" onclick="showPage('page-summary')">Podsumowanie</a>
+                <a href="#" class="sidebar-link" onclick="showPage('page-next-steps')">Następne Kroki</a>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main>
+            <!-- STRONA: INTRO -->
+            <div class="page active" id="page-intro">
+                <div class="page-header">
+                    <h1>[TYTUŁ WEBBOOKA]</h1>
+                    <p class="subtitle">[PODTYTUŁ - Np. Program 21-dniowy na odbudowę siebie]</p>
+                </div>
+
+                <div class="content-block highlight">
+                    <p><strong>🎧 Powitanie od Autorki/Autora</strong></p>
+                    <p>[TREŚĆ POWITANIA - 2-3 akapity]</p>
+                </div>
+
+                <div class="media-container">
+                    <img src="[PLACEHOLDER_IMAGE_URL]" alt="Okładka webbooka">
+                    <p class="media-caption">[OPIS ZDJĘCIA]</p>
+                </div>
+
+                <div class="audio-player">
+                    <div class="audio-player-title">🎧 Posłuchaj: Powitanie od Autorki</div>
+                    <audio controls>
+                        <source src="[PLACEHOLDER_AUDIO_URL]" type="audio/mpeg">
+                        Twoja przeglądarka nie obsługuje odtwarzania audio.
+                    </audio>
+                </div>
+
+                <div style="text-align: center; margin: 2rem 0;">
+                    <button class="btn btn-primary" onclick="showPage('page-about')">Rozpocznij Program →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: O AUTORZE -->
+            <div class="page" id="page-about">
+                <div class="page-header">
+                    <h1>O Autorze</h1>
+                </div>
+
+                <div class="content-block">
+                    <h2>[IMIĘ NAZWISKO]</h2>
+                    <p>[BIOGRAFIA - 3-5 akapitów opisujących doświadczenie, kwalifikacje, podejście]</p>
+                </div>
+
+                <h2>Doświadczenie</h2>
+                <ul>
+                    <li>[PUNKT 1]</li>
+                    <li>[PUNKT 2]</li>
+                    <li>[PUNKT 3]</li>
+                </ul>
+
+                <h2>Podejście</h2>
+                <p>[OPIS PODEJŚCIA - Jak pracujesz, jakie wartości kierują Twoją pracą]</p>
+            </div>
+
+            <!-- STRONA: PRAWA AUTORSKIE -->
+            <div class="page" id="page-copyright">
+                <div class="page-header">
+                    <h1>Prawa Autorskie</h1>
+                </div>
+
+                <div class="content-block warning">
+                    <p><strong>© [ROK] [IMIĘ NAZWISKO/NAZWA FIRMY]. Wszelkie prawa zastrzeżone.</strong></p>
+                </div>
+
+                <p>Żadna część tej publikacji nie może być powielana, rozpowszechniana ani przekazywana w jakiejkolwiek formie i w jakikolwiek sposób, w tym elektroniczny, mechaniczny, poprzez fotokopiowanie, nagrywanie lub inny, bez uprzedniej pisemnej zgody autorki/autora, z wyjątkiem krótkich cytatów w recenzjach i niektórych innych niekomercyjnych zastosowań dozwolonych przez prawo autorskie.</p>
+
+                <h2>Licencja Użytkownika</h2>
+                <p>Niniejsza publikacja jest licencjonowana wyłącznie do użytku osobistego. Nie wolno Ci:</p>
+                <ul>
+                    <li>Sprzedawać, wynajmować, dzierżawić lub udostępniać tę publikację</li>
+                    <li>Modyfikować, adaptować lub tworzyć dzieła pochodne</li>
+                    <li>Rozpowszechniać w sieciach peer-to-peer</li>
+                    <li>Używać do celów komercyjnych bez zgody autorki/autora</li>
+                </ul>
+            </div>
+
+            <!-- STRONA: DISCLAIMER -->
+            <div class="page" id="page-disclaimer">
+                <div class="page-header">
+                    <h1>Ważne Informacje i Zastrzeżenia</h1>
+                </div>
+
+                <div class="content-block danger">
+                    <h3>⚠️ Uwaga</h3>
+                    <p>Treści zawarte w tym webbooku mają charakter wyłącznie informacyjny i edukacyjny. Nie stanowią one porady medycznej, psychologicznej ani terapeutycznej i nie mogą zastąpić profesjonalnej konsultacji ze specjalistą – lekarzem, psychologiem, psychoterapeutą lub psychiatrą.</p>
+                </div>
+
+                <h2>Odpowiedzialność</h2>
+                <p>[AUTOR/FIRMA] dołożyła wszelkich starań, aby informacje zawarte w tej publikacji były rzetelne i zgodne z aktualną wiedzą, jednak nie ponosi odpowiedzialności za jakiekolwiek decyzje podjęte na ich podstawie ani za ich ewentualne skutki.</p>
+
+                <p><strong>Korzystanie z przedstawionych technik i metod odbywa się na własną odpowiedzialność czytelnika.</strong></p>
+
+                <h2>Brak Gwarancji</h2>
+                <p>Publikacja jest dostarczana w stanie „takim jaki jest" bez żadnych gwarancji, wyraźnych lub dorozumianych, w tym bez gwarancji przydatności handlowej lub przydatności do określonego celu.</p>
+            </div>
+
+            <!-- STRONA: KIEDY NIE KORZYSTAĆ -->
+            <div class="page" id="page-when-not">
+                <div class="page-header">
+                    <h1>Kiedy NIE Korzystać z Tego Programu</h1>
+                </div>
+
+                <div class="content-block danger">
+                    <h3>⚠️ Bezpieczeństwo</h3>
+                    <p>Program nie jest dla Ciebie, jeśli znajdujesz się w jednej z poniższych sytuacji. W takich przypadkach konieczne jest natychmiastowe skontaktowanie się z profesjonalnym wsparciem.</p>
+                </div>
+
+                <h2>Program NIE Jest Odpowiedni, Gdy:</h2>
+                <ul>
+                    <li>[WARUNEK 1 - Np. Przeżywasz kryzys psychiczny, masz myśli samobójcze]</li>
+                    <li>[WARUNEK 2 - Np. Cierpisz na ciężkie zaburzenia psychiczne]</li>
+                    <li>[WARUNEK 3 - Np. Jesteś w trakcie terapii traumy]</li>
+                    <li>[WARUNEK 4 - Np. Czujesz, że praca z emocjami jest zbyt przytłaczająca]</li>
+                </ul>
+
+                <div class="content-block warning">
+                    <h2>📞 W Sytuacjach Kryzysowych Natychmiast Skontaktuj Się Z:</h2>
+                    <p><strong>📞 Telefon Zaufania dla Osób Dorosłych:</strong> [NUMER] (codziennie od [GODZINA] do [GODZINA])</p>
+                    <p><strong>📞 Telefon Zaufania dla Dzieci i Młodzieży:</strong> [NUMER] (całą dobę)</p>
+                    <p><strong>🏥 Ośrodek Interwencji Kryzysowej (OIK):</strong> [ADRES/NUMER]</p>
+                    <p><strong>🏥 Izba Przyjęć Szpitala Psychiatrycznego:</strong> [ADRES/NUMER]</p>
+                </div>
+            </div>
+
+            <!-- STRONA: DO KOGO JEST TEN PROGRAM -->
+            <div class="page" id="page-for-whom">
+                <div class="page-header">
+                    <h1>Do Kogo Jest Ten Program</h1>
+                </div>
+
+                <div class="content-block success">
+                    <h2>✅ Ten Program Jest Dla Ciebie, Jeśli:</h2>
+                    <ul>
+                        <li>[KRYTERIUM 1]</li>
+                        <li>[KRYTERIUM 2]</li>
+                        <li>[KRYTERIUM 3]</li>
+                        <li>[KRYTERIUM 4]</li>
+                        <li>[KRYTERIUM 5]</li>
+                    </ul>
+                </div>
+
+                <div class="content-block danger">
+                    <h2>❌ Ten Program NIE Jest Dla Ciebie, Jeśli:</h2>
+                    <ul>
+                        <li>[NEGATYWNE KRYTERIUM 1]</li>
+                        <li>[NEGATYWNE KRYTERIUM 2]</li>
+                        <li>[NEGATYWNE KRYTERIUM 3]</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- STRONA: CO TO JEST [TEMAT] -->
+            <div class="page" id="page-what-is">
+                <div class="page-header">
+                    <h1>Co To Jest [TEMAT]</h1>
+                </div>
+
+                <div class="content-block highlight">
+                    <p><strong>Główna Definicja:</strong> [DEFINICJA - 1-2 zdania]</p>
+                </div>
+
+                <h2>Wyjaśnienie</h2>
+                <p>[SZCZEGÓŁOWE WYJAŚNIENIE - 2-3 akapity]</p>
+
+                <h2>Dlaczego To Ważne?</h2>
+                <p>[UZASADNIENIE - Dlaczego temat jest istotny dla odbiorcy]</p>
+
+                <div class="media-container">
+                    <img src="[PLACEHOLDER_IMAGE_URL]" alt="Ilustracja do tematu">
+                    <p class="media-caption">[OPIS ZDJĘCIA]</p>
+                </div>
+            </div>
+
+            <!-- STRONA: CO PROGRAM ROBI -->
+            <div class="page" id="page-what-does">
+                <div class="page-header">
+                    <h1>Co Program Robi i Czego Nie Obiecuje</h1>
+                </div>
+
+                <div class="content-block success">
+                    <h2>✅ Co Program Robi:</h2>
+                    <ul>
+                        <li>[PUNKT 1]</li>
+                        <li>[PUNKT 2]</li>
+                        <li>[PUNKT 3]</li>
+                        <li>[PUNKT 4]</li>
+                        <li>[PUNKT 5]</li>
+                    </ul>
+                </div>
+
+                <div class="content-block danger">
+                    <h2>❌ Czego Program Nie Obiecuje:</h2>
+                    <ul>
+                        <li>[PUNKT 1]</li>
+                        <li>[PUNKT 2]</li>
+                        <li>[PUNKT 3]</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- STRONA: JAK KORZYSTAĆ -->
+            <div class="page" id="page-how-to-use">
+                <div class="page-header">
+                    <h1>Jak Korzystać z Tego Webbooka</h1>
+                </div>
+
+                <p>Ten webbook składa się z trzech głównych elementów, które wzajemnie się uzupełniają:</p>
+
+                <h2>📘 Ebook</h2>
+                <p>Stanowi bazę teoretyczną i przewodnik po całym procesie. Każdy dzień/moduł zawiera tekst do przeczytania oraz szczegółową instrukcję.</p>
+
+                <h2>🎧 Nagrania Audio</h2>
+                <p>Profesjonalne nagrania, które możesz słuchać w dowolnym momencie. Idealne do słuchania podczas spaceru, jazdy samochodem lub relaksu.</p>
+
+                <h2>📝 Karty Pracy</h2>
+                <p>Interaktywne karty pracy, które pomogą Ci utrwalić wiedzę i ćwiczyć praktycznie.</p>
+
+                <h2>Rekomendowany Harmonogram</h2>
+                <ol>
+                    <li>Przeczytaj tekst dnia (10-15 minut)</li>
+                    <li>Posłuchaj nagrania audio (15-20 minut)</li>
+                    <li>Wypełnij kartę pracy (10-15 minut)</li>
+                    <li>Praktykuj technikę przez cały dzień</li>
+                </ol>
+            </div>
+
+            <!-- STRONA: LEKCJA 1 -->
+            <div class="page" id="page-1-1">
+                <div class="progress-container">
+                    <div class="progress-label">Postęp: Lekcja 1 z 12 (8%)</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 8%;"></div>
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <h1>Lekcja 1: [TEMAT LEKCJI]</h1>
+                    <p class="subtitle">[PODTYTUŁ LEKCJI]</p>
+                </div>
+
+                <div class="content-block highlight">
+                    <p><strong>Główna Idea:</strong> [GŁÓWNA IDEA LEKCJI - 1-2 zdania]</p>
+                </div>
+
+                <h2>Wprowadzenie</h2>
+                <p>[TREŚĆ WPROWADZENIA - 2-3 akapity wyjaśniające kontekst lekcji]</p>
+
+                <div class="media-container">
+                    <img src="[PLACEHOLDER_IMAGE_URL]" alt="Ilustracja do lekcji 1">
+                    <p class="media-caption">[OPIS ZDJĘCIA]</p>
+                </div>
+
+                <h2>Kluczowe Punkty</h2>
+                <ul>
+                    <li>[PUNKT 1]</li>
+                    <li>[PUNKT 2]</li>
+                    <li>[PUNKT 3]</li>
+                </ul>
+
+                <div class="audio-player">
+                    <div class="audio-player-title">🎧 Słuchaj: [TYTUŁ NAGRANIA] (15 minut)</div>
+                    <audio controls>
+                        <source src="[PLACEHOLDER_AUDIO_URL]" type="audio/mpeg">
+                        Twoja przeglądarka nie obsługuje odtwarzania audio.
+                    </audio>
+                </div>
+
+                <div class="worksheet">
+                    <div class="worksheet-title">📋 Karta Pracy: [NAZWA KARTY]</div>
+
+                    <div class="form-group">
+                        <label>[PYTANIE 1]</label>
+                        <textarea placeholder="Wpisz swoją odpowiedź..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>[PYTANIE 2]</label>
+                        <textarea placeholder="Wpisz swoją odpowiedź..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>[PYTANIE 3]</label>
+                        <textarea placeholder="Wpisz swoją odpowiedź..."></textarea>
+                    </div>
+
+                    <button class="btn btn-save" onclick="saveWorksheet()">💾 Zapisz Kartę Pracy</button>
+                </div>
+
+                <div class="quiz">
+                    <div class="quiz-title">❓ Sprawdź Swoją Wiedzę</div>
+
+                    <div class="quiz-question">
+                        <div class="quiz-question-text">1. [PYTANIE 1]</div>
+                        <div class="quiz-options">
+                            <label class="quiz-option">
+                                <input type="radio" name="q1" value="a"> [ODPOWIEDŹ A]
+                            </label>
+                            <label class="quiz-option">
+                                <input type="radio" name="q1" value="b"> [ODPOWIEDŹ B]
+                            </label>
+                            <label class="quiz-option">
+                                <input type="radio" name="q1" value="c"> [ODPOWIEDŹ C]
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="quiz-question">
+                        <div class="quiz-question-text">2. [PYTANIE 2]</div>
+                        <div class="quiz-options">
+                            <label class="quiz-option">
+                                <input type="radio" name="q2" value="a"> [ODPOWIEDŹ A]
+                            </label>
+                            <label class="quiz-option">
+                                <input type="radio" name="q2" value="b"> [ODPOWIEDŹ B]
+                            </label>
+                            <label class="quiz-option">
+                                <input type="radio" name="q2" value="c"> [ODPOWIEDŹ C]
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-intro')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-1-2')">Dalej →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: LEKCJA 2 -->
+            <div class="page" id="page-1-2">
+                <div class="progress-container">
+                    <div class="progress-label">Postęp: Lekcja 2 z 12 (17%)</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 17%;"></div>
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <h1>Lekcja 2: [TEMAT LEKCJI]</h1>
+                    <p class="subtitle">[PODTYTUŁ LEKCJI]</p>
+                </div>
+
+                <div class="content-block highlight">
+                    <p><strong>Główna Idea:</strong> [GŁÓWNA IDEA LEKCJI - 1-2 zdania]</p>
+                </div>
+
+                <h2>Treść Lekcji</h2>
+                <p>[TREŚĆ - 2-3 akapity]</p>
+
+                <div class="video-container">
+                    <iframe src="https://www.youtube.com/embed/[VIDEO_ID]" allowfullscreen></iframe>
+                </div>
+
+                <h2>Praktyczne Ćwiczenie</h2>
+                <p>[OPIS ĆWICZENIA]</p>
+
+                <div class="worksheet">
+                    <div class="worksheet-title">📋 Karta Pracy: [NAZWA KARTY]</div>
+
+                    <div class="form-group">
+                        <label>[PYTANIE 1]</label>
+                        <textarea placeholder="Wpisz swoją odpowiedź..."></textarea>
+                    </div>
+
+                    <button class="btn btn-save" onclick="saveWorksheet()">💾 Zapisz Kartę Pracy</button>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-1-1')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-1-3')">Dalej →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: LEKCJA 3 -->
+            <div class="page" id="page-1-3">
+                <div class="progress-container">
+                    <div class="progress-label">Postęp: Lekcja 3 z 12 (25%)</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 25%;"></div>
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <h1>Lekcja 3: [TEMAT LEKCJI]</h1>
+                    <p class="subtitle">[PODTYTUŁ LEKCJI]</p>
+                </div>
+
+                <div class="content-block highlight">
+                    <p><strong>Główna Idea:</strong> [GŁÓWNA IDEA LEKCJI - 1-2 zdania]</p>
+                </div>
+
+                <h2>Treść Lekcji</h2>
+                <p>[TREŚĆ - 2-3 akapity]</p>
+
+                <div class="audio-player">
+                    <div class="audio-player-title">🎧 Słuchaj: [TYTUŁ NAGRANIA] (20 minut)</div>
+                    <audio controls>
+                        <source src="[PLACEHOLDER_AUDIO_URL]" type="audio/mpeg">
+                        Twoja przeglądarka nie obsługuje odtwarzania audio.
+                    </audio>
+                </div>
+
+                <div class="worksheet">
+                    <div class="worksheet-title">📋 Karta Pracy: [NAZWA KARTY]</div>
+
+                    <div class="form-group">
+                        <label>[PYTANIE 1]</label>
+                        <textarea placeholder="Wpisz swoją odpowiedź..."></textarea>
+                    </div>
+
+                    <button class="btn btn-save" onclick="saveWorksheet()">💾 Zapisz Kartę Pracy</button>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-1-2')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-2-1')">Dalej →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: CZĘŚĆ II - LEKCJA 1 -->
+            <div class="page" id="page-2-1">
+                <div class="progress-container">
+                    <div class="progress-label">Postęp: Lekcja 4 z 12 (33%)</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 33%;"></div>
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <h1>Część II - Lekcja 1: [TEMAT]</h1>
+                    <p class="subtitle">[PODTYTUŁ]</p>
+                </div>
+
+                <div class="content-block highlight">
+                    <p><strong>Główna Idea:</strong> [GŁÓWNA IDEA - 1-2 zdania]</p>
+                </div>
+
+                <h2>Treść</h2>
+                <p>[TREŚĆ - 2-3 akapity]</p>
+
+                <div class="worksheet">
+                    <div class="worksheet-title">📋 Karta Pracy</div>
+
+                    <div class="form-group">
+                        <label>[PYTANIE]</label>
+                        <textarea placeholder="Wpisz swoją odpowiedź..."></textarea>
+                    </div>
+
+                    <button class="btn btn-save" onclick="saveWorksheet()">💾 Zapisz</button>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-1-3')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-2-2')">Dalej →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: CZĘŚĆ II - LEKCJA 2 -->
+            <div class="page" id="page-2-2">
+                <div class="progress-container">
+                    <div class="progress-label">Postęp: Lekcja 5 z 12 (42%)</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 42%;"></div>
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <h1>Część II - Lekcja 2: [TEMAT]</h1>
+                    <p class="subtitle">[PODTYTUŁ]</p>
+                </div>
+
+                <div class="content-block highlight">
+                    <p><strong>Główna Idea:</strong> [GŁÓWNA IDEA - 1-2 zdania]</p>
+                </div>
+
+                <h2>Treść</h2>
+                <p>[TREŚĆ - 2-3 akapity]</p>
+
+                <div class="worksheet">
+                    <div class="worksheet-title">📋 Karta Pracy</div>
+
+                    <div class="form-group">
+                        <label>[PYTANIE]</label>
+                        <textarea placeholder="Wpisz swoją odpowiedź..."></textarea>
+                    </div>
+
+                    <button class="btn btn-save" onclick="saveWorksheet()">💾 Zapisz</button>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-2-1')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-2-3')">Dalej →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: CZĘŚĆ II - LEKCJA 3 -->
+            <div class="page" id="page-2-3">
+                <div class="progress-container">
+                    <div class="progress-label">Postęp: Lekcja 6 z 12 (50%)</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 50%;"></div>
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <h1>Część II - Lekcja 3: [TEMAT]</h1>
+                    <p class="subtitle">[PODTYTUŁ]</p>
+                </div>
+
+                <div class="content-block highlight">
+                    <p><strong>Główna Idea:</strong> [GŁÓWNA IDEA - 1-2 zdania]</p>
+                </div>
+
+                <h2>Treść</h2>
+                <p>[TREŚĆ - 2-3 akapity]</p>
+
+                <div class="worksheet">
+                    <div class="worksheet-title">📋 Karta Pracy</div>
+
+                    <div class="form-group">
+                        <label>[PYTANIE]</label>
+                        <textarea placeholder="Wpisz swoją odpowiedź..."></textarea>
+                    </div>
+
+                    <button class="btn btn-save" onclick="saveWorksheet()">💾 Zapisz</button>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-2-2')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-3-1')">Dalej →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: CZĘŚĆ III - LEKCJA 1 -->
+            <div class="page" id="page-3-1">
+                <div class="progress-container">
+                    <div class="progress-label">Postęp: Lekcja 7 z 12 (58%)</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 58%;"></div>
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <h1>Część III - Lekcja 1: [TEMAT]</h1>
+                    <p class="subtitle">[PODTYTUŁ]</p>
+                </div>
+
+                <div class="content-block highlight">
+                    <p><strong>Główna Idea:</strong> [GŁÓWNA IDEA - 1-2 zdania]</p>
+                </div>
+
+                <h2>Treść</h2>
+                <p>[TREŚĆ - 2-3 akapity]</p>
+
+                <div class="worksheet">
+                    <div class="worksheet-title">📋 Karta Pracy</div>
+
+                    <div class="form-group">
+                        <label>[PYTANIE]</label>
+                        <textarea placeholder="Wpisz swoją odpowiedź..."></textarea>
+                    </div>
+
+                    <button class="btn btn-save" onclick="saveWorksheet()">💾 Zapisz</button>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-2-3')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-3-2')">Dalej →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: CZĘŚĆ III - LEKCJA 2 -->
+            <div class="page" id="page-3-2">
+                <div class="progress-container">
+                    <div class="progress-label">Postęp: Lekcja 8 z 12 (67%)</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 67%;"></div>
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <h1>Część III - Lekcja 2: [TEMAT]</h1>
+                    <p class="subtitle">[PODTYTUŁ]</p>
+                </div>
+
+                <div class="content-block highlight">
+                    <p><strong>Główna Idea:</strong> [GŁÓWNA IDEA - 1-2 zdania]</p>
+                </div>
+
+                <h2>Treść</h2>
+                <p>[TREŚĆ - 2-3 akapity]</p>
+
+                <div class="worksheet">
+                    <div class="worksheet-title">📋 Karta Pracy</div>
+
+                    <div class="form-group">
+                        <label>[PYTANIE]</label>
+                        <textarea placeholder="Wpisz swoją odpowiedź..."></textarea>
+                    </div>
+
+                    <button class="btn btn-save" onclick="saveWorksheet()">💾 Zapisz</button>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-3-1')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-3-3')">Dalej →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: CZĘŚĆ III - LEKCJA 3 -->
+            <div class="page" id="page-3-3">
+                <div class="progress-container">
+                    <div class="progress-label">Postęp: Lekcja 9 z 12 (75%)</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 75%;"></div>
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <h1>Część III - Lekcja 3: [TEMAT]</h1>
+                    <p class="subtitle">[PODTYTUŁ]</p>
+                </div>
+
+                <div class="content-block highlight">
+                    <p><strong>Główna Idea:</strong> [GŁÓWNA IDEA - 1-2 zdania]</p>
+                </div>
+
+                <h2>Treść</h2>
+                <p>[TREŚĆ - 2-3 akapity]</p>
+
+                <div class="worksheet">
+                    <div class="worksheet-title">📋 Karta Pracy</div>
+
+                    <div class="form-group">
+                        <label>[PYTANIE]</label>
+                        <textarea placeholder="Wpisz swoją odpowiedź..."></textarea>
+                    </div>
+
+                    <button class="btn btn-save" onclick="saveWorksheet()">💾 Zapisz</button>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-3-2')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-faq')">Dalej →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: FAQ -->
+            <div class="page" id="page-faq">
+                <div class="page-header">
+                    <h1>FAQ - Najczęstsze Pytania</h1>
+                </div>
+
+                <h2>❓ Pytanie 1: [PYTANIE]</h2>
+                <p>[ODPOWIEDŹ - 2-3 akapity]</p>
+
+                <h2>❓ Pytanie 2: [PYTANIE]</h2>
+                <p>[ODPOWIEDŹ - 2-3 akapity]</p>
+
+                <h2>❓ Pytanie 3: [PYTANIE]</h2>
+                <p>[ODPOWIEDŹ - 2-3 akapity]</p>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-3-3')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-resources')">Dalej →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: ZASOBY -->
+            <div class="page" id="page-resources">
+                <div class="page-header">
+                    <h1>Zasoby i Materiały Dodatkowe</h1>
+                </div>
+
+                <h2>📚 Rekomendowane Książki</h2>
+                <ul>
+                    <li>[KSIĄŻKA 1] - [AUTOR]</li>
+                    <li>[KSIĄŻKA 2] - [AUTOR]</li>
+                    <li>[KSIĄŻKA 3] - [AUTOR]</li>
+                </ul>
+
+                <h2>🔗 Przydatne Linki</h2>
+                <ul>
+                    <li><a href="[LINK]" target="_blank">[NAZWA ZASOBU]</a></li>
+                    <li><a href="[LINK]" target="_blank">[NAZWA ZASOBU]</a></li>
+                </ul>
+
+                <h2>📱 Aplikacje Mobilne</h2>
+                <ul>
+                    <li>[APLIKACJA 1] - [OPIS]</li>
+                    <li>[APLIKACJA 2] - [OPIS]</li>
+                </ul>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-faq')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-support')">Dalej →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: WSPARCIE -->
+            <div class="page" id="page-support">
+                <div class="page-header">
+                    <h1>Dodatkowe Formy Wsparcia</h1>
+                </div>
+
+                <h2>📧 Email</h2>
+                <p>Jeśli masz pytania, napisz do nas: [EMAIL]</p>
+
+                <h2>📞 Telefon</h2>
+                <p>Dostępni jesteśmy pod numerem: [NUMER TELEFONU]</p>
+
+                <h2>👥 Grupy Wsparcia</h2>
+                <p>[OPIS GRUP WSPARCIA - Gdzie można znaleźć społeczność]</p>
+
+                <h2>💬 Konsultacje Indywidualne</h2>
+                <p>[OPIS KONSULTACJI - Jak zarezerwować sesję]</p>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-resources')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-summary')">Dalej →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: PODSUMOWANIE -->
+            <div class="page" id="page-summary">
+                <div class="page-header">
+                    <h1>Podsumowanie</h1>
+                </div>
+
+                <div class="content-block success">
+                    <h2>🎉 Gratulacje!</h2>
+                    <p>Ukończyłeś/ukończyłaś ten program. Oto, czego się nauczyłeś/nauczyłaś:</p>
+                </div>
+
+                <h2>Kluczowe Lekcje</h2>
+                <ul>
+                    <li>[LEKCJA 1]</li>
+                    <li>[LEKCJA 2]</li>
+                    <li>[LEKCJA 3]</li>
+                </ul>
+
+                <h2>Następne Kroki</h2>
+                <p>[REKOMENDACJE - Co robić dalej]</p>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-support')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-next-steps')">Dalej →</button>
+                </div>
+            </div>
+
+            <!-- STRONA: NASTĘPNE KROKI -->
+            <div class="page" id="page-next-steps">
+                <div class="page-header">
+                    <h1>Następne Kroki</h1>
+                </div>
+
+                <h2>🚀 Jak Kontynuować Pracę?</h2>
+                <p>[OPIS - Jak wracać do programu, jak pogłębiać wiedzę]</p>
+
+                <h2>📅 Harmonogram Powtórek</h2>
+                <p>[REKOMENDACJE - Jak często wracać do materiałów]</p>
+
+                <h2>💪 Motywacja i Wsparcie</h2>
+                <p>[INSPIRACJA - Słowa zachęty]</p>
+
+                <div class="content-block success">
+                    <p><strong>Dziękuję za ukończenie tego programu!</strong></p>
+                    <p>Jeśli masz jakiekolwiek pytania lub chcesz podzielić się swoimi doświadczeniami, skontaktuj się z nami.</p>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="showPage('page-summary')">← Wstecz</button>
+                    <button class="btn btn-primary" onclick="showPage('page-intro')">Powrót na Początek</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="#" onclick="showPage('page-about')">O Autorze</a>
+                <a href="#" onclick="showPage('page-copyright')">Prawa Autorskie</a>
+                <a href="#" onclick="showPage('page-disclaimer')">Disclaimer</a>
+                <a href="#" onclick="showPage('page-support')">Wsparcie</a>
+            </div>
+            <p>&copy; [ROK] [IMIĘ NAZWISKA/NAZWA FIRMY]. Wszystkie prawa zastrzeżone.</p>
+            <p>Webbook stworzony przez <strong>HardbanRecords Lab</strong></p>
+        </div>
+    </footer>
+
+    <script>
+        function showPage(pageId) {
+            // Hide all pages
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.classList.remove('active'));
+
+            // Show selected page
+            const selectedPage = document.getElementById(pageId);
+            if (selectedPage) {
+                selectedPage.classList.add('active');
+                window.scrollTo(0, 0);
+            }
+
+            // Update sidebar active link
+            const links = document.querySelectorAll('.sidebar-link');
+            links.forEach(link => link.classList.remove('active'));
+            const activeLink = document.querySelector(`[onclick="showPage('${pageId}')"]`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+            }
+
+            // Close sidebar on mobile
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('active');
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        function saveWorksheet() {
+            alert('✓ Karta pracy zapisana! (To jest demo - dane nie są przechowywane)');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            showPage('page-intro');
+        });
+    </script>
+</body>
+</html>

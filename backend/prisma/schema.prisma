@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String  @id @default(cuid())
+  email     String  @unique
+  password  String
+  name      String
+  role      String  @default("READER")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  webooks   Webook[]
+  purchases Purchase[]
+  progress  Progress[]
+  analytics AnalyticsEvent[]
+}
+
+model Webook {
+  id        String   @id @default(cuid())
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  title     String
+  slug      String   @unique
+  status    String   @default("DRAFT")
+  theme     String
+  chapters  Chapter[]
+  priceCents Int     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  quizzes   Quiz[]
+  purchases Purchase[]
+  progress  Progress[]
+  analytics AnalyticsEvent[]
+}
+
+model Chapter {
+  id        String  @id @default(cuid())
+  webookId  String
+  webook    Webook  @relation(fields: [webookId], references: [id])
+  title     String
+  order     Int
+  blocks    Block[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([webookId, order])
+}
+
+model Block {
+  id        String  @id @default(cuid())
+  chapterId String
+  chapter   Chapter @relation(fields: [chapterId], references: [id])
+  type      String
+  content   String
+  order     Int
+  condition String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([chapterId, order])
+}
+
+model Quiz {
+  id        String  @id @default(cuid())
+  webookId  String
+  webook    Webook  @relation(fields: [webookId], references: [id])
+  title     String
+  questions QuizQuestion[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QuizQuestion {
+  id       String @id @default(cuid())
+  quizId   String
+  quiz     Quiz   @relation(fields: [quizId], references: [id])
+  text     String
+  answers  QuizAnswer[]
+  correctAnswerId String?
+}
+
+model QuizAnswer {
+  id        String @id @default(cuid())
+  questionId String
+  question   QuizQuestion @relation(fields: [questionId], references: [id])
+  text      String
+}
+
+model Progress {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+  webookId  String
+  webook    Webook  @relation(fields: [webookId], references: [id])
+  chapterId String?
+  blockId   String?
+  data      String
+  createdAt DateTime @default(now())
+  @@index([userId, webookId])
+}
+
+model Purchase {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+  webookId  String
+  webook    Webook  @relation(fields: [webookId], references: [id])
+  stripePaymentIntentId String?
+  amountCents Int
+  currency  String
+  status    String  @default("PENDING")
+  createdAt DateTime @default(now())
+  @@index([userId, webookId])
+}
+
+model AnalyticsEvent {
+  id        String  @id @default(cuid())
+  userId    String?
+  user      User?   @relation(fields: [userId], references: [id])
+  webookId  String
+  webook    Webook  @relation(fields: [webookId], references: [id])
+  type      String
+  data      String
+  createdAt DateTime @default(now())
+  @@index([webookId, type])
+}

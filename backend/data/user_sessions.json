@@ -4,5 +4,23 @@
     "session_token": "sess_36b3a1aa893040beab35decbf241a3cc",
     "expires_at": "2026-02-12T17:28:37.796310+00:00",
     "created_at": "2026-02-05T17:28:37.798019+00:00"
+  },
+  {
+    "user_id": "user_4574834c2ff7",
+    "session_token": "sess_57783227e5514bde9b09cde1b2bd3cba",
+    "expires_at": "2026-02-15T09:13:11.124904+00:00",
+    "created_at": "2026-02-08T09:13:11.125206+00:00"
+  },
+  {
+    "user_id": "user_4574834c2ff7",
+    "session_token": "sess_2656f37ccd11425f859820cb621047c3",
+    "expires_at": "2026-02-15T09:17:12.423597+00:00",
+    "created_at": "2026-02-08T09:17:12.423629+00:00"
+  },
+  {
+    "user_id": "user_4574834c2ff7",
+    "session_token": "sess_7dca958d42e5421cac9fa767cd2d77eb",
+    "expires_at": "2026-02-15T11:30:01.250633+00:00",
+    "created_at": "2026-02-08T11:30:01.250947+00:00"
   }
 ]

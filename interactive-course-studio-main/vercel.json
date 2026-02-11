@@ -10,8 +10,8 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "http://84.247.162.167:3003/api/$1" },
-    { "source": "/uploads/(.*)", "destination": "http://84.247.162.167:3003/uploads/$1" },
+    { "source": "/api/:path*", "destination": "http://84.247.162.167:3003/api/:path*" },
+    { "source": "/uploads/:path*", "destination": "http://84.247.162.167:3003/uploads/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

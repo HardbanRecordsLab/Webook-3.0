@@ -1,6 +1,6 @@
 import { createId, WorksheetQuestion, QuizQuestion, QuizOption } from '@/types/webbook';
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-content`;
+const API_URL = '/api/ai/generate';
 
 interface StreamOptions {
   onDelta: (text: string) => void;
@@ -11,12 +11,17 @@ export async function streamAI(
   body: Record<string, unknown>,
   { onDelta, onDone }: StreamOptions
 ): Promise<string> {
-  const resp = await fetch(CHAT_URL, {
+  const token = localStorage.getItem('token');
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const resp = await fetch(API_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-    },
+    headers,
     body: JSON.stringify(body),
   });
 

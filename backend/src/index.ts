@@ -81,6 +81,7 @@ function allowRoles(roles: string[]) {
   }
 }
 app.use("/api/auth", createAuthRouter(prisma, signToken))
+app.use("/api/ai", auth, createAiRouter())
 app.post("/api/upload", auth, upload.single('file'), (req: any, res: Response) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" })

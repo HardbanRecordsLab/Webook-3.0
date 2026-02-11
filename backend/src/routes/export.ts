@@ -44,7 +44,7 @@ export function createExportRouter(prisma: PrismaClient) {
   router.get("/html/:slug", async (req, res) => {
     const webook = await prisma.webook.findUnique({ where: { slug: req.params.slug }, include: { chapters: { include: { blocks: true }, orderBy: { order: "asc" } } } })
     if (!webook) return res.status(404).json({ error: "not_found" })
-    const html = `<html><head><meta charset="utf-8"><title>${webook.title}</title></head><body>${webook.chapters.map(c=>`<section><h2>${c.title}</h2>${c.blocks.map(b=>renderBlock({ ...b, content: parseJson(b.content) })).join("")}</section>`).join("")}</body></html>`
+    const html = `<html><head><meta charset="utf-8"><title>${webook.title}</title></head><body>${webook.chapters.map((c: any)=>`<section><h2>${c.title}</h2>${c.blocks.map((b: any)=>renderBlock({ ...b, content: parseJson(b.content) })).join("")}</section>`).join("")}</body></html>`
     res.type("text/html").send(html)
   })
   router.get("/epub/:slug", async (req, res) => {
@@ -67,7 +67,7 @@ export function createExportRouter(prisma: PrismaClient) {
     for (let i=0;i<(webook.chapters||[]).length;i++) {
       const c = webook.chapters[i]
       const id = `chap${i+1}`
-      const body = c.blocks.map(b=>renderXhtmlBlock({ ...b, content: parseJson(b.content) })).join("")
+      const body = c.blocks.map((b: any)=>renderXhtmlBlock({ ...b, content: parseJson(b.content) })).join("")
       const xhtml = `<?xml version=\"1.0\" encoding=\"utf-8\"?>
 <!DOCTYPE html>
 <html xmlns=\"http://www.w3.org/1999/xhtml\">

@@ -3,7 +3,7 @@ import type { PrismaClient } from "@prisma/client"
 import jwt from "jsonwebtoken"
 import { z } from "zod"
 import type { Request, Response, NextFunction } from "express"
-import { parseJson } from "../utils/parse"
+import { parseJson } from "../utils/parse.js"
 
 type UserToken = { id: string, role: string }
 interface AuthRequest extends Request { user?: UserToken }

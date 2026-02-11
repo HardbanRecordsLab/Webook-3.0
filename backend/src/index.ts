@@ -15,7 +15,30 @@ import { createEmbedRouter } from "./routes/embed"
 import { createAuthRouter } from "./routes/auth"
 import { createWebooksRouter } from "./routes/webooks"
 import { parseJson } from "./utils/parse"
+import multer from "multer"
+import fs from "fs"
+import path from "path"
+
 const app = express()
+
+// Upload configuration
+const UPLOAD_DIR = process.env.UPLOAD_DIR || "uploads"
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true })
+}
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOAD_DIR)
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, uniqueSuffix + '-' + file.originalname)
+  }
+})
+const upload = multer({ storage: storage })
+
+app.use("/uploads", express.static(UPLOAD_DIR))
+
 app.use(express.json({ limit: "2mb", verify: (req: any, res: any, buf: Buffer) => { req.rawBody = buf } }))
 const allowedOrigins = (process.env.CORS_ORIGIN || "").split(",").map(s=>s.trim()).filter(Boolean)
 app.use(cors({
@@ -58,6 +81,17 @@ function allowRoles(roles: string[]) {
   }
 }
 app.use("/api/auth", createAuthRouter(prisma, signToken))
+app.post("/api/upload", auth, upload.single('file'), (req: any, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded" })
+  }
+  const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
+  res.json({ 
+    url: url,
+    name: req.file.originalname,
+    id: req.file.filename
+  })
+})
 app.use("/api/webooks", createWebooksRouter(prisma, auth, allowRoles, JWT_SECRET))
 const chapterSchema = z.object({ title: z.string().min(1), order: z.number().int().nonnegative() })
 app.post("/api/webooks/:id/chapters", auth, allowRoles(["ADMIN", "EDITOR"]), async (req: any, res: Response) => {

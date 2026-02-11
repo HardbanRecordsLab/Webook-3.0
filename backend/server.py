@@ -1,4 +1,6 @@
 from fastapi import FastAPI, APIRouter, UploadFile, File, HTTPException, Form, Request, Response
+from fastapi.staticfiles import StaticFiles
+import shutil
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -22,101 +24,13 @@ from lib.pdf_generator import PDFGenerator
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# Portable JSON Database (Zero-Config replacement for MongoDB)
-class JsonCollection:
-    def __init__(self, name, data_dir):
-        self.path = data_dir / f"{name}.json"
-        if not self.path.exists():
-            self.path.write_text("[]", encoding='utf-8')
-            
-    def _read(self):
-        try:
-            with open(self.path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
-            return []
+UPLOAD_DIR = ROOT_DIR / "uploads"
+UPLOAD_DIR.mkdir(exist_ok=True)
 
-    def _write(self, data):
-        with open(self.path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, default=str)
+# Portable JSON Database (Zero-Config replacement for MongoDB) -> Replaced by PostgresDB
+from lib.postgres_db import PostgresDB
 
-    def find_one(self, query, projection=None):
-        data = self._read()
-        for item in data:
-            if all(item.get(k) == v for k, v in query.items()):
-                return item
-        return None
-
-    def find(self, query=None, projection=None):
-        data = self._read()
-        if not query:
-            return JsonQueryBuilder(data)
-        results = [item for item in data if all(item.get(k) == v for k, v in query.items())]
-        return JsonQueryBuilder(results)
-
-    def insert_one(self, doc):
-        data = self._read()
-        data.append(doc)
-        self._write(data)
-        return doc
-
-    def update_one(self, query, update):
-        data = self._read()
-        updated = False
-        for item in data:
-            if all(item.get(k) == v for k, v in query.items()):
-                if "$set" in update:
-                    item.update(update["$set"])
-                elif "$inc" in update:
-                    for k, v in update["$inc"].items():
-                        item[k] = item.get(k, 0) + v
-                else:
-                    item.update(update)
-                updated = True
-        if updated:
-            self._write(data)
-        return updated
-
-    def delete_one(self, query):
-        data = self._read()
-        for i, item in enumerate(data):
-            if all(item.get(k) == v for k, v in query.items()):
-                data.pop(i)
-                self._write(data)
-                return True
-        return False
-
-    def delete_many(self, query):
-        data = self._read()
-        new_data = [item for item in data if not all(item.get(k) == v for k, v in query.items())]
-        self._write(new_data)
-        return True
-
-    def count_documents(self, query):
-        data = self._read()
-        return len([item for item in data if all(item.get(k) == v for k, v in query.items())])
-
-class JsonQueryBuilder:
-    def __init__(self, data):
-        self.data = data
-    def sort(self, field, direction):
-        self.data.sort(key=lambda x: str(x.get(field, "")), reverse=(direction == -1))
-        return self
-    def to_list(self, limit=None):
-        return self.data[:limit] if limit else self.data
-
-class JsonDB:
-    def __init__(self, data_dir_name="data"):
-        self.data_dir = ROOT_DIR / data_dir_name
-        self.data_dir.mkdir(exist_ok=True)
-        self.collections = {}
-
-    def __getattr__(self, name):
-        if name not in self.collections:
-            self.collections[name] = JsonCollection(name, self.data_dir)
-        return self.collections[name]
-
-db = JsonDB()
+db = PostgresDB()
 
 # Stripe & Payments (Local Mock)
 from lib.payments import StripeCheckout, CheckoutSessionResponse, CheckoutSessionRequest
@@ -181,6 +95,28 @@ app.add_middleware(
 )
 
 api_router = APIRouter(prefix="/api")
+
+@api_router.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """Upload file to local storage"""
+    try:
+        file_ext = file.filename.split(".")[-1] if "." in file.filename else "bin"
+        file_name = f"{uuid.uuid4()}.{file_ext}"
+        file_path = UPLOAD_DIR / file_name
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Return relative URL (client should prepend backend URL)
+        # Or return full URL if we know the host
+        return {
+            "url": f"/uploads/{file_name}",
+            "name": file.filename,
+            "id": file_name.split(".")[0]
+        }
+    except Exception as e:
+        logger.error(f"Upload failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

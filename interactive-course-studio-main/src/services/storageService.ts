@@ -1,22 +1,24 @@
-import { supabase } from '@/integrations/supabase/client';
 import { createId } from '@/types/webbook';
 
 export async function uploadMedia(file: File, folder = 'media'): Promise<{ url: string; name: string; id: string }> {
-  const ext = file.name.split('.').pop();
-  const id = createId();
-  const path = `${folder}/${id}.${ext}`;
+  const formData = new FormData();
+  formData.append('file', file);
 
-  const { error } = await supabase.storage
-    .from('webbook-media')
-    .upload(path, file, { cacheControl: '3600', upsert: false });
+  const response = await fetch('/api/upload', {
+    method: 'POST',
+    body: formData,
+  });
 
-  if (error) throw new Error(`Upload error: ${error.message}`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Upload error: ${response.status} ${errorText}`);
+  }
 
-  const { data } = supabase.storage.from('webbook-media').getPublicUrl(path);
+  const data = await response.json();
 
   return {
-    url: data.publicUrl,
-    name: file.name,
-    id,
+    url: data.url,
+    name: data.name,
+    id: data.id,
   };
 }

@@ -8,6 +8,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      '/api': 'http://localhost:3003',
+      '/uploads': 'http://localhost:3003',
+    },
     hmr: {
       overlay: false,
     },

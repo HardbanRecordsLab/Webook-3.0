@@ -1,14 +1,11 @@
-module.exports = {
-  apps: [
-    {
-      name: "webook-backend",
-      script: "dist/index.js",
-      instances: 1,
-      exec_mode: "fork",
-      env: {
-        NODE_ENV: "production",
-        PORT: 3003
-      }
-    }
-  ]
-}
+export const apps = [{
+  name: "webook-backend",
+  script: "./dist/index.js",
+  instances: 1,
+  autorestart: true,
+  watch: false,
+  max_memory_restart: "1G",
+  env: {
+    NODE_ENV: "production",
+  }
+}]

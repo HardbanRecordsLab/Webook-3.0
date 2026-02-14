@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { createId, WorksheetQuestion, QuizQuestion, QuizOption } from '@/types/webbook';
+import { createId, WorksheetQuestion, QuizQuestion, QuizOption, IntroPages } from '@/types/webbook';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3003';
 
@@ -205,6 +205,27 @@ export async function generateKeyTerms(content: string): Promise<{ success: bool
       success: false,
       error: 'Nie udało się wygenerować słów kluczowych'
     };
+  }
+}
+
+// INTRO PAGES
+export async function generateIntroPages(topic: string): Promise<Partial<IntroPages>> {
+  try {
+    // Try to hit the endpoint if it exists, otherwise mock it for now to fix build
+    // const response = await axios.post(`${API_URL}/api/ai/generate-intro-pages`, { topic });
+    // return response.data;
+    
+    // Mock implementation until backend endpoint is ready
+    return {
+        aboutAuthor: `Ekspert w dziedzinie ${topic}. Posiada wieloletnie doświadczenie praktyczne i teoretyczne.`,
+        forWhom: `Kurs jest przeznaczony dla każdego, kto chce zgłębić temat ${topic}, niezależnie od poziomu zaawansowania.`,
+        howToUse: "Zalecamy przechodzenie lekcji w kolejności chronologicznej. Wykonuj wszystkie ćwiczenia i quizy, aby utrwalić wiedzę.",
+        disclaimer: "Treści zawarte w tym kursie mają charakter wyłącznie edukacyjny i nie zastępują profesjonalnego doradztwa.",
+        copyright: `Copyright © ${new Date().getFullYear()}. Wszelkie prawa zastrzeżone. Kopiowanie i rozpowszechnianie bez zgody autora zabronione.`
+    };
+  } catch (error) {
+    console.error('Intro pages generation failed:', error);
+    throw error;
   }
 }
 

@@ -10,6 +10,9 @@ const StartScreen = ({ onStart }: StartScreenProps) => {
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
       {/* Hero */}
       <div className="text-center mb-16 max-w-2xl">
+        <div className="flex justify-center mb-8">
+           <img src="/logo.png" alt="Webook 3.0 Studio" className="h-32 w-auto drop-shadow-2xl animate-in fade-in zoom-in duration-700" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+        </div>
         <div className="inline-flex items-center gap-3 mb-6 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
           <Sparkles className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium text-primary">Webbook 3.0 Creator</span>
@@ -92,7 +95,7 @@ const StartScreen = ({ onStart }: StartScreenProps) => {
 
       {/* Footer */}
       <div className="mt-16 text-center text-xs text-muted-foreground">
-        <p>Webbook 3.0 Creator · HardbanRecords Lab</p>
+        <p>Webbook 3.0 Studio · HardbanRecords Lab</p>
       </div>
     </div>
   );

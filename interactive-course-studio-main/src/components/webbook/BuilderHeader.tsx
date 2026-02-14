@@ -38,6 +38,7 @@ const BuilderHeader = ({ webbook, onPreview, onBack }: BuilderHeaderProps) => {
           onClick={onBack}
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
+          <img src="/logo.png" alt="Webook 3.0 Studio" className="h-8 w-auto mr-2" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           <ArrowLeft className="w-4 h-4" />
           Powrót
         </button>

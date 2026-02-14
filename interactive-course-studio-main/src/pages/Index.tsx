@@ -53,7 +53,7 @@ const Index = () => {
     ?.lessons.find((l) => l.id === selectedLessonId);
 
   if (view === 'start') {
-    return <StartScreen onStart={handleStart} />;
+    return <Dashboard onStart={handleStart} />;
   }
 
   if (view === 'preview' && webbook) {

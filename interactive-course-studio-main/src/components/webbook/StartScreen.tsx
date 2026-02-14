@@ -15,7 +15,7 @@ const StartScreen = ({ onStart }: StartScreenProps) => {
         </div>
         <div className="inline-flex items-center gap-3 mb-6 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
           <Sparkles className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-primary">Webbook 3.0 Creator</span>
+          <span className="text-sm font-medium text-primary">Webbook 3.0 Studio</span>
         </div>
         <h1 className="text-5xl md:text-6xl font-serif font-bold text-foreground mb-4 tracking-tight">
           Twórz Interaktywne Kursy

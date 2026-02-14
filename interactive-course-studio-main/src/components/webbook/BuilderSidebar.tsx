@@ -1,6 +1,8 @@
-import { Plus, Trash2, ChevronRight, Book, Settings, FileText, Wrench } from 'lucide-react';
-import { Webbook, createModule, createLesson } from '@/types/webbook';
+import { Plus, BookOpen, Settings, Layout, Layers, FileText, ChevronRight, ChevronDown, Trash2, Wand2 } from 'lucide-react';
+import { Webbook, Module, Lesson } from '@/types/webbook';
 import { useState } from 'react';
+import { createModule, createLesson } from '@/types/webbook';
+import { cn } from '@/lib/utils';
 
 interface BuilderSidebarProps {
   webbook: Webbook;
@@ -10,7 +12,7 @@ interface BuilderSidebarProps {
   onUpdateWebbook: (webbook: Webbook) => void;
   onOpenSettings: () => void;
   onOpenIntroPages: () => void;
-  onOpenTools?: () => void;
+  onOpenTools: () => void;
 }
 
 const BuilderSidebar = ({
@@ -21,124 +23,189 @@ const BuilderSidebar = ({
   onUpdateWebbook,
   onOpenSettings,
   onOpenIntroPages,
+  onOpenTools
 }: BuilderSidebarProps) => {
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(
-    new Set(webbook.modules.map((m) => m.id))
+  const [expandedModules, setExpandedModules] = useState<string[]>(
+    webbook.modules.map(m => m.id)
   );
 
-  const toggleModule = (id: string) => {
-    setExpandedModules((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const toggleModule = (moduleId: string) => {
+    setExpandedModules(prev =>
+      prev.includes(moduleId)
+        ? prev.filter(id => id !== moduleId)
+        : [...prev, moduleId]
+    );
   };
 
-  const addModule = () => {
-    const mod = createModule(`Moduł ${webbook.modules.length + 1}`);
-    const updated = { ...webbook, modules: [...webbook.modules, mod] };
-    onUpdateWebbook(updated);
-    setExpandedModules((prev) => new Set(prev).add(mod.id));
-    onSelectLesson(mod.id, mod.lessons[0].id);
-  };
-
-  const addLesson = (moduleId: string) => {
-    const mod = webbook.modules.find((m) => m.id === moduleId);
-    if (!mod) return;
-    const lesson = createLesson(`Lekcja ${mod.lessons.length + 1}`);
-    const updated = {
-      ...webbook,
-      modules: webbook.modules.map((m) =>
-        m.id === moduleId ? { ...m, lessons: [...m.lessons, lesson] } : m
-      ),
-    };
-    onUpdateWebbook(updated);
-    onSelectLesson(moduleId, lesson.id);
-  };
-
-  const deleteModule = (moduleId: string) => {
-    onUpdateWebbook({ ...webbook, modules: webbook.modules.filter((m) => m.id !== moduleId) });
-  };
-
-  const deleteLesson = (moduleId: string, lessonId: string) => {
+  const handleAddModule = () => {
+    const newModule = createModule(`Moduł ${webbook.modules.length + 1}`);
     onUpdateWebbook({
       ...webbook,
-      modules: webbook.modules.map((m) =>
-        m.id === moduleId ? { ...m, lessons: m.lessons.filter((l) => l.id !== lessonId) } : m
-      ),
+      modules: [...webbook.modules, newModule],
     });
+    setExpandedModules(prev => [...prev, newModule.id]);
+  };
+
+  const handleAddLesson = (moduleId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onUpdateWebbook({
+      ...webbook,
+      modules: webbook.modules.map(m => {
+        if (m.id === moduleId) {
+          const newLesson = createLesson(`Lekcja ${m.lessons.length + 1}`);
+          return { ...m, lessons: [...m.lessons, newLesson] };
+        }
+        return m;
+      }),
+    });
+  };
+
+  const handleDeleteModule = (moduleId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('Czy na pewno chcesz usunąć ten moduł i wszystkie jego lekcje?')) {
+      onUpdateWebbook({
+        ...webbook,
+        modules: webbook.modules.filter(m => m.id !== moduleId),
+      });
+    }
   };
 
   return (
-    <aside className="w-72 bg-sidebar text-sidebar-foreground flex flex-col h-full border-r border-sidebar-border">
-      <div className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-2 mb-1">
-          <Book className="w-5 h-5 text-sidebar-primary" />
-          <span className="font-serif font-bold text-sidebar-accent-foreground text-lg truncate">
-            {webbook.metadata.title || 'Nowy Webbook'}
-          </span>
+    <div className="w-80 border-r border-border bg-sidebar flex flex-col h-full text-sidebar-foreground">
+      {/* Branding Header */}
+      <div className="p-4 border-b border-sidebar-border bg-sidebar-accent/20">
+        <div className="flex items-center gap-3 mb-1">
+           <img src="/logo.png" alt="Logo" className="h-8 w-auto" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+           <span className="font-bold text-lg text-sidebar-primary-foreground tracking-tight">Studio</span>
         </div>
-        <p className="text-xs text-sidebar-foreground truncate">{webbook.metadata.author || 'Autor'}</p>
+        <div className="text-xs text-sidebar-foreground/60 uppercase tracking-wider font-semibold pl-1">
+          Edytor Kursu
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-2">
-        {/* Intro Pages button */}
+      {/* Main Navigation */}
+      <div className="p-3 border-b border-sidebar-border space-y-1">
+        <button
+          onClick={onOpenSettings}
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-left"
+        >
+          <Settings className="w-4 h-4" />
+          Ustawienia Kursu
+        </button>
         <button
           onClick={onOpenIntroPages}
-          className="flex items-center gap-2 w-full px-2 py-2 mb-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground text-sm transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-left"
         >
-          <FileText className="w-4 h-4 text-sidebar-primary" />
-          <span className="text-sidebar-accent-foreground font-medium">Strony Wstępne</span>
+          <BookOpen className="w-4 h-4" />
+          Strony Wstępne
         </button>
-
-        {webbook.modules.map((mod) => (
-          <div key={mod.id} className="mb-1">
-            <div className="flex items-center gap-1 px-2 py-2 rounded-md hover:bg-sidebar-accent cursor-pointer group" onClick={() => toggleModule(mod.id)}>
-              <ChevronRight className={`w-4 h-4 text-sidebar-foreground transition-transform ${expandedModules.has(mod.id) ? 'rotate-90' : ''}`} />
-              <span className="flex-1 text-sm font-medium text-sidebar-accent-foreground truncate">{mod.title}</span>
-              <button onClick={(e) => { e.stopPropagation(); deleteModule(mod.id); }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/20 rounded transition-opacity">
-                <Trash2 className="w-3 h-3 text-destructive" />
-              </button>
-            </div>
-            {expandedModules.has(mod.id) && (
-              <div className="ml-4 border-l border-sidebar-border pl-2">
-                {mod.lessons.map((lesson) => (
-                  <div
-                    key={lesson.id}
-                    className={`flex items-center gap-1 px-2 py-1.5 rounded-md cursor-pointer group text-sm transition-colors ${
-                      selectedLessonId === lesson.id ? 'bg-sidebar-primary/20 text-sidebar-primary' : 'hover:bg-sidebar-accent text-sidebar-foreground'
-                    }`}
-                    onClick={() => onSelectLesson(mod.id, lesson.id)}
-                  >
-                    <span className="flex-1 truncate">{lesson.title}</span>
-                    <button onClick={(e) => { e.stopPropagation(); deleteLesson(mod.id, lesson.id); }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/20 rounded transition-opacity">
-                      <Trash2 className="w-3 h-3 text-destructive" />
-                    </button>
-                  </div>
-                ))}
-                <button onClick={() => addLesson(mod.id)} className="flex items-center gap-1 px-2 py-1.5 text-xs text-sidebar-foreground hover:text-sidebar-primary transition-colors w-full">
-                  <Plus className="w-3 h-3" /> Dodaj lekcję
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+        <button
+          onClick={onOpenTools}
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-left text-blue-400 hover:text-blue-300"
+        >
+          <Wand2 className="w-4 h-4" />
+          Narzędzia AI
+        </button>
       </div>
 
-      <div className="p-3 border-t border-sidebar-border space-y-2">
-        <button onClick={addModule} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md bg-sidebar-primary/20 text-sidebar-primary hover:bg-sidebar-primary/30 transition-colors">
-          <Plus className="w-4 h-4" /> Dodaj Moduł
-        </button>
-        <button onClick={onOpenSettings} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors">
-          <Settings className="w-4 h-4" /> Ustawienia
-        </button>
-        {typeof onOpenTools === 'function' && (
-          <button onClick={onOpenTools} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors">
-            <Wrench className="w-4 h-4" /> Narzędzia
+      {/* Modules List */}
+      <div className="flex-1 overflow-y-auto p-3 scrollbar-thin">
+        <div className="flex items-center justify-between mb-4 px-2">
+          <span className="text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">
+            Struktura Kursu
+          </span>
+          <button
+            onClick={handleAddModule}
+            className="p-1 hover:bg-sidebar-accent rounded-md transition-colors"
+            title="Dodaj moduł"
+          >
+            <Plus className="w-4 h-4" />
           </button>
-        )}
+        </div>
+
+        <div className="space-y-4">
+          {webbook.modules.map((module, mIndex) => (
+            <div key={module.id} className="space-y-1">
+              {/* Module Header */}
+              <div
+                className={cn(
+                  "group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors",
+                  selectedModuleId === module.id && !selectedLessonId 
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                    : "hover:bg-sidebar-accent/50 text-sidebar-foreground"
+                )}
+                onClick={() => toggleModule(module.id)}
+              >
+                <button className="p-0.5 rounded-sm hover:bg-white/10">
+                  {expandedModules.includes(module.id) ? (
+                    <ChevronDown className="w-3 h-3" />
+                  ) : (
+                    <ChevronRight className="w-3 h-3" />
+                  )}
+                </button>
+                <div className="flex-1 min-w-0 font-medium text-sm truncate">
+                  <span className="text-sidebar-foreground/50 mr-2 text-xs">M{mIndex + 1}</span>
+                  {module.title}
+                </div>
+                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => handleAddLesson(module.id, e)}
+                    className="p-1 hover:bg-white/10 rounded"
+                    title="Dodaj lekcję"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteModule(module.id, e)}
+                    className="p-1 hover:bg-red-500/20 hover:text-red-400 rounded"
+                    title="Usuń moduł"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Lessons List */}
+              {expandedModules.includes(module.id) && (
+                <div className="ml-4 space-y-0.5 border-l border-sidebar-border/50 pl-2">
+                  {module.lessons.map((lesson, lIndex) => (
+                    <div
+                      key={lesson.id}
+                      onClick={() => onSelectLesson(module.id, lesson.id)}
+                      className={cn(
+                        "group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-sm transition-all border border-transparent",
+                        selectedLessonId === lesson.id
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      )}
+                    >
+                      <FileText className={cn("w-3 h-3 shrink-0", selectedLessonId === lesson.id ? "text-white" : "text-sidebar-foreground/40")} />
+                      <span className="truncate flex-1">
+                        <span className="opacity-50 mr-1.5 text-xs">{lIndex + 1}.</span>
+                        {lesson.title}
+                      </span>
+                    </div>
+                  ))}
+                  {module.lessons.length === 0 && (
+                    <div className="px-2 py-2 text-xs text-sidebar-foreground/40 italic">
+                      Brak lekcji
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
-    </aside>
+
+      {/* Footer / Stats */}
+      <div className="p-4 border-t border-sidebar-border bg-sidebar-accent/10">
+        <div className="flex items-center justify-between text-xs text-sidebar-foreground/60">
+          <span>Moduły: {webbook.modules.length}</span>
+          <span>Lekcje: {webbook.modules.reduce((acc, m) => acc + m.lessons.length, 0)}</span>
+        </div>
+      </div>
+    </div>
   );
 };
 

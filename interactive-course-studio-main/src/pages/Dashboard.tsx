@@ -1,9 +1,12 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Clock, MoreVertical, Edit, Trash2, Eye, Sparkles } from "lucide-react";
+import { Plus, Clock, MoreVertical, Edit, Trash2, Eye, Sparkles, TrendingUp, Users, DollarSign } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Webbook, createWebbook } from "@/types/webbook";
+import { InteractiveCard } from "@/components/ui/InteractiveCard";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
 
 interface DashboardProps {
   onStart: (webbook: Webbook) => void;
@@ -14,6 +17,7 @@ export default function Dashboard({ onStart }: DashboardProps) {
     {
       id: 1,
       title: "Kurs: EFT po Toksycznym Związku",
+      description: "Kompleksowy przewodnik o uwalnianiu emocji po trudnych relacjach.",
       updatedAt: "2 godziny temu",
       status: "Opublikowany",
       pages: 12,
@@ -22,6 +26,7 @@ export default function Dashboard({ onStart }: DashboardProps) {
     {
       id: 2,
       title: "Skalowanie Biznesu Online",
+      description: "Strategie wzrostu dla e-commerce i usług cyfrowych.",
       updatedAt: "1 dzień temu",
       status: "Szkic",
       pages: 5,
@@ -30,6 +35,7 @@ export default function Dashboard({ onStart }: DashboardProps) {
     {
       id: 3,
       title: "Mindfulness dla Początkujących",
+      description: "Wprowadzenie do medytacji uważności w codziennym życiu.",
       updatedAt: "3 dni temu",
       status: "Szkic",
       pages: 8,
@@ -47,68 +53,98 @@ export default function Dashboard({ onStart }: DashboardProps) {
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-serif font-bold text-slate-900">Dashboard</h1>
-            <p className="text-slate-500 mt-1">Witaj z powrotem! Oto Twoje ostatnie projekty.</p>
+            <h1 className="text-4xl font-serif font-bold text-slate-900 tracking-tight">Studio Dashboard</h1>
+            <p className="text-slate-500 mt-2 text-lg">Twórz, zarządzaj i publikuj swoje webbooki w jednym miejscu.</p>
           </div>
-          <Button onClick={handleCreateNew} className="bg-[#f59e0b] hover:bg-[#d97706] text-white gap-2 shadow-lg shadow-orange-500/20">
-            <Plus className="w-4 h-4" /> Nowy Projekt
-          </Button>
+          <AnimatedButton 
+            onClick={handleCreateNew} 
+            variant="primary" 
+            size="lg"
+            icon={<Plus className="w-5 h-5" />}
+          >
+            Nowy Projekt
+          </AnimatedButton>
         </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Wszystkie Projekty</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-slate-900">12</div>
-            </CardContent>
-          </Card>
-          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Wyświetlenia</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-slate-900">45.2K</div>
-            </CardContent>
-          </Card>
-          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Przychód</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-[#f59e0b]">12,450 PLN</div>
-            </CardContent>
-          </Card>
+          <GlassCard variant="elevated" className="bg-white/50 border-slate-200">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-purple-100 rounded-xl text-purple-600">
+                <Users className="w-8 h-8" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Wszystkie Projekty</p>
+                <h3 className="text-3xl font-bold text-slate-900">12</h3>
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard variant="elevated" className="bg-white/50 border-slate-200">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-teal-100 rounded-xl text-teal-600">
+                <TrendingUp className="w-8 h-8" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Wyświetlenia</p>
+                <h3 className="text-3xl font-bold text-slate-900">45.2K</h3>
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard variant="elevated" className="bg-white/50 border-slate-200">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-amber-100 rounded-xl text-amber-600">
+                <DollarSign className="w-8 h-8" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Przychód</p>
+                <h3 className="text-3xl font-bold text-[#f59e0b]">12,450 PLN</h3>
+              </div>
+            </div>
+          </GlassCard>
         </div>
 
         {/* Recent Projects */}
         <div>
-          <h2 className="text-xl font-serif font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#f59e0b]" /> Ostatnie Projekty
+          <h2 className="text-2xl font-serif font-bold text-slate-900 mb-6 flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-[#f59e0b]" /> Ostatnie Projekty
           </h2>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Create New Card */}
-            <Card 
-                onClick={handleCreateNew}
-                className="border-dashed border-2 border-slate-300 bg-slate-50/50 flex flex-col items-center justify-center h-full min-h-[300px] cursor-pointer hover:border-[#f59e0b] hover:bg-orange-50/30 transition-all group"
+            <div 
+              onClick={handleCreateNew}
+              className="group relative h-full min-h-[280px] rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 flex flex-col items-center justify-center cursor-pointer hover:border-[#f59e0b] hover:bg-orange-50/30 transition-all duration-300 overflow-hidden"
             >
-              <div className="w-16 h-16 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:border-[#f59e0b] transition-all duration-300">
-                <Plus className="w-8 h-8 text-slate-400 group-hover:text-[#f59e0b]" />
+              <div className="w-20 h-20 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-[#f59e0b] transition-all duration-300 z-10">
+                <Plus className="w-10 h-10 text-slate-400 group-hover:text-[#f59e0b]" />
               </div>
-              <h3 className="font-semibold text-slate-900 group-hover:text-[#f59e0b] transition-colors">Utwórz Nowy Projekt</h3>
-              <p className="text-sm text-slate-500 mt-1">Rozpocznij od szablonu lub od zera</p>
-            </Card>
+              <h3 className="font-bold text-xl text-slate-900 group-hover:text-[#f59e0b] transition-colors z-10">Utwórz Nowy Projekt</h3>
+              <p className="text-slate-500 mt-2 z-10">Rozpocznij od szablonu lub od zera</p>
+              
+              {/* Background Glow */}
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            </div>
 
             {projects.map((project) => (
-              <Card key={project.id} className="group hover:shadow-lg transition-all duration-300 border-slate-200 overflow-hidden">
-                <CardHeader className="relative p-0 h-40 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-                  <span className="text-6xl group-hover:scale-110 transition-transform duration-300 filter drop-shadow-lg">{project.thumbnail}</span>
-                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <DropdownMenu>
+              <div key={project.id} className="relative group">
+                <InteractiveCard
+                  title={project.title}
+                  description={project.description}
+                  icon={<span className="text-4xl">{project.thumbnail}</span>}
+                  stats={[
+                    { label: 'Status', value: project.status },
+                    { label: 'Strony', value: `${project.pages}` }
+                  ]}
+                  className="h-full bg-white"
+                />
+                
+                {/* Actions Overlay */}
+                <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                   <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="secondary" size="icon" className="h-8 w-8 bg-white/10 backdrop-blur hover:bg-white/20 text-white border-0">
+                        <Button variant="secondary" size="icon" className="h-8 w-8 bg-white/80 backdrop-blur hover:bg-white text-slate-700 shadow-sm rounded-full">
                           <MoreVertical className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -124,27 +160,8 @@ export default function Dashboard({ onStart }: DashboardProps) {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-start mb-2">
-                    <CardTitle className="text-lg line-clamp-1 font-serif">{project.title}</CardTitle>
-                  </div>
-                  <CardDescription className="flex items-center gap-2 mb-4 text-xs">
-                    <Clock className="w-3 h-3" /> Zaktualizowano {project.updatedAt}
-                  </CardDescription>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                      project.status === "Opublikowany" 
-                        ? "bg-green-50 text-green-700 border-green-200" 
-                        : "bg-yellow-50 text-yellow-700 border-yellow-200"
-                    }`}>
-                      {project.status}
-                    </span>
-                    <span className="text-slate-500 text-xs">{project.pages} stron</span>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>

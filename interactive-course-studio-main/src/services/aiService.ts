@@ -101,6 +101,7 @@ export async function generateQuiz(content: string): Promise<any> {
     // Adapt response to expected format
     if (response.data.success && response.data.questions) {
         return {
+            success: true,
             title: 'Quiz',
             questions: response.data.questions.map((q: any) => ({
                 id: createId(),
@@ -116,7 +117,7 @@ export async function generateQuiz(content: string): Promise<any> {
     throw new Error(response.data.error || 'Failed to generate quiz');
   } catch (error) {
     console.error('Quiz generation failed:', error);
-    throw error;
+    return { success: false, error: String(error) };
   }
 }
 
@@ -257,5 +258,8 @@ export const aiService = {
   generateSummary,
   generateLearningObjectives,
   generateKeyTerms,
-  checkHealth
+  generateIntroPages,
+  checkHealth,
+  generateWorksheet,
+  streamAI
 };

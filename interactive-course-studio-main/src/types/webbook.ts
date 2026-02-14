@@ -55,6 +55,11 @@ export interface Lesson {
     term: string;
     definition: string;
   }[];
+  audio?: {
+    url: string;
+    provider: 'piper' | 'elevenlabs';
+    duration?: number;
+  };
 }
 
 export interface Module {

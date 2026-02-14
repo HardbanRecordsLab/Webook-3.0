@@ -15,7 +15,7 @@ export function useAI(options: UseAIOptions = {}) {
     setError(null);
     try {
       const result = await aiService.generateQuiz(content);
-      // result is already the quiz object or error thrown
+      if (!result.success) throw new Error(result.error);
       options.onSuccess?.(result);
       return result;
     } catch (err) {

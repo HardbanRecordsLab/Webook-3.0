@@ -100,3 +100,11 @@ referencing==0.37.0
 regex==2026.1.15
 psycopg2-binary==2.9.9
 sqlalchemy==2.0.25
+groq==0.9.0
+anthropic==0.35.0
+piper-tts==1.2.0
+langchain==0.2.12
+reportlab==4.1.0
+qrcode==8.0
+matplotlib==3.9.5
+asyncio-contextmanager==1.0.0

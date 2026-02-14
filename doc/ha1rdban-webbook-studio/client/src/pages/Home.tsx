@@ -35,7 +35,10 @@ export default function Home() {
             <a href="#faq" className="text-slate-600 hover:text-slate-900 transition">FAQ</a>
             <a href="#contact" className="text-slate-600 hover:text-slate-900 transition">Kontakt</a>
           </nav>
-          <Button className="bg-blue-600 hover:bg-blue-700">Zarezerwuj Konsultację</Button>
+          <div className="flex gap-4">
+            <Button variant="ghost" onClick={() => window.location.href = "/dashboard"}>Zaloguj</Button>
+            <Button className="bg-blue-600 hover:bg-blue-700">Zarezerwuj Konsultację</Button>
+          </div>
         </div>
       </header>
 

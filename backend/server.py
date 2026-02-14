@@ -1668,11 +1668,30 @@ async def toggle_bookmark(project_id: str, request: Request, chapter_id: str = F
 async def get_badges():
     return [b.model_dump() for b in BADGES]
 
+from lib.ai_gateway import get_ai_gateway
+from lib.audio_generator import get_audio_generator
+
 # ==================== AI ENDPOINTS ====================
+
+class AIRequest(BaseModel):
+    content: str
+    max_tokens: int = 1000
+    temperature: float = 0.7
+
+class AudioRequest(BaseModel):
+    text: str
+    voice: str = "pl_PL-ewa-medium"
+    lesson_id: str = None
+    language: str = "pl"
+
+class ImageGenerationRequest(BaseModel):
+    prompt: str
+    style: str = "realistic"
+    size: str = "768x768"
 
 @api_router.post("/ai/enhance")
 async def ai_enhance(request: Request):
-    """Enhance and polish selected text using Gemini AI"""
+    """Enhance and polish selected text using AI Gateway"""
     user = await require_auth(request)
     body = await request.json()
     text = body.get("text")
@@ -1680,8 +1699,7 @@ async def ai_enhance(request: Request):
     if not text:
         raise HTTPException(status_code=400, detail="text required")
     
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    ai = get_ai_gateway()
     
     prompt = f"""
     Enhance and polish the following text for a professional webbook/e-course. 
@@ -1690,8 +1708,12 @@ async def ai_enhance(request: Request):
     Text: "{text}"
     """
     
-    response = model.generate_content(prompt)
-    return {"enhanced_text": response.text}
+    try:
+        response = await ai.generate_text(prompt)
+        return {"enhanced_text": response}
+    except Exception as e:
+        logger.error(f"AI Enhance failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/ai/generate-content")
 async def ai_generate_content(request: Request):
@@ -1704,8 +1726,7 @@ async def ai_generate_content(request: Request):
     if not title:
         raise HTTPException(status_code=400, detail="title required")
     
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    ai = get_ai_gateway()
     
     prompt = f"""
     Write a comprehensive and engaging chapter for a webbook.
@@ -1719,55 +1740,215 @@ async def ai_generate_content(request: Request):
     - Do not include <html> or <body> tags. Just the content.
     """
     
-    response = model.generate_content(prompt)
-    return {"content": response.text}
+    try:
+        response = await ai.generate_text(prompt, max_tokens=2000)
+        return {"content": response}
+    except Exception as e:
+        logger.error(f"AI Content Generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/ai/generate-quiz")
-async def ai_generate_quiz(request: Request):
-    """Generate quiz questions based on chapter content"""
-    user = await require_auth(request)
-    body = await request.json()
-    content = body.get("content")
-    
-    if not content:
-        raise HTTPException(status_code=400, detail="content required")
-    
-    if not GEMINI_API_KEY:
-        # Fallback for development if API key is missing
-        return {
-            "questions": [
-                {"question": "What is the main topic of this chapter?", "options": ["Topic A", "Topic B", "Topic C", "Topic D"], "correct_answer": 0, "explanation": "This is a fallback question."},
-                {"question": "How do you apply this knowledge?", "options": ["Option 1", "Option 2", "Option 3", "Option 4"], "correct_answer": 1, "explanation": "This is another fallback question."}
-            ]
-        }
-
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    
-    prompt = f"""
-    Based on the following chapter content, generate a high-quality quiz with 3-5 multiple-choice questions.
-    Return ONLY a JSON object with a 'questions' array. Each question must have:
-    - 'question' (string)
-    - 'options' (array of 4 strings)
-    - 'correct_answer' (integer 0-3)
-    - 'explanation' (string)
-    
-    Content:
-    {content[:4000]}
+async def generate_quiz(request: AIRequest):
     """
+    Generate quiz questions from lesson content
+    """
+    ai = get_ai_gateway()
+    
+    prompt = f"""Based on this educational content, generate exactly 5 quiz questions in Polish.
+
+CONTENT:
+{request.content[:2000]}
+
+Return ONLY a valid JSON array with this structure (no markdown, no code blocks):
+[
+    {{
+        "question": "Pytanie?",
+        "options": ["Opcja A", "Opcja B", "Opcja C", "Opcja D"],
+        "correct_answer": 0,
+        "explanation": "Wyjaśnienie odpowiedzi"
+    }}
+]
+
+Make questions cover different difficulty levels (easy, medium, hard).
+Do NOT include markdown formatting.
+Return ONLY the JSON array."""
     
     try:
-        response = model.generate_content(prompt)
-        # Extract JSON if Gemini wraps it in markdown blocks
-        json_str = response.text
-        if "```json" in json_str:
-            json_str = json_str.split("```json")[1].split("```")[0].strip()
-        elif "```" in json_str:
-            json_str = json_str.split("```")[1].split("```")[0].strip()
+        response = await ai.generate_with_json_response(prompt)
         
-        return json.loads(json_str)
+        if isinstance(response, list):
+            return {
+                "success": True,
+                "questions": response,
+                "count": len(response)
+            }
+        else:
+            return {
+                "success": False,
+                "error": "Invalid response format",
+                "details": response
+            }
+    
     except Exception as e:
-        logger.error(f"AI Quiz Generation failed: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to generate quiz with AI")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@api_router.post("/ai/generate-audio")
+async def generate_audio(request: AudioRequest):
+    """
+    Generate audio/speech from text
+    """
+    try:
+        audio_gen = get_audio_generator()
+        result = await audio_gen.generate_from_text(
+            text=request.text,
+            voice=request.voice,
+            lesson_id=request.lesson_id,
+            language=request.language
+        )
+        return result
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+@api_router.post("/ai/generate-image")
+async def generate_image(request: ImageGenerationRequest):
+    """
+    Generate image from text prompt
+    """
+    try:
+        # Pollinations.ai - ZERO cost
+        size_parts = request.size.split('x')
+        width, height = size_parts[0], size_parts[1]
+        
+        # Construct Pollinations URL
+        image_url = f"https://image.pollinations.ai/prompt/{request.prompt}?width={width}&height={height}&model=flux"
+        
+        return {
+            "success": True,
+            "image_url": image_url,
+            "provider": "pollinations",
+            "size": request.size
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@api_router.post("/ai/generate-summary")
+async def generate_summary(request: AIRequest):
+    """Generate concise summary of content"""
+    ai = get_ai_gateway()
+    
+    prompt = f"""Create a concise summary (max 3-4 sentences) in Polish:
+
+{request.content[:1500]}
+
+Summary:"""
+    
+    try:
+        response = await ai.generate_text(prompt, max_tokens=300)
+        return {
+            "success": True,
+            "summary": response.strip()
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@api_router.post("/ai/generate-learning-objectives")
+async def generate_learning_objectives(request: AIRequest):
+    """Generate learning objectives from lesson content"""
+    ai = get_ai_gateway()
+    
+    prompt = f"""Based on this lesson content, generate 3-5 specific learning objectives in Polish, 
+starting with action verbs (understand, apply, analyze, etc.):
+
+{request.content[:2000]}
+
+Return as JSON array:
+["Cel 1", "Cel 2", ...]"""
+    
+    try:
+        response = await ai.generate_with_json_response(prompt)
+        if isinstance(response, list):
+            return {
+                "success": True,
+                "objectives": response
+            }
+        return {"success": False, "error": "Invalid format"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@api_router.post("/ai/generate-key-terms")
+async def generate_key_terms(request: AIRequest):
+    """Extract and explain key terms from lesson"""
+    ai = get_ai_gateway()
+    
+    prompt = f"""Extract 5-7 key terms from this educational content in Polish.
+For each term, provide a brief definition (1-2 sentences).
+
+CONTENT:
+{request.content[:2000]}
+
+Return as JSON object:
+{{
+    "term_1": "definition...",
+    "term_2": "definition..."
+}}"""
+    
+    try:
+        response = await ai.generate_with_json_response(prompt)
+        if isinstance(response, dict):
+            return {
+                "success": True,
+                "terms": response
+            }
+        return {"success": False, "error": "Invalid format"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@api_router.get("/audio/{file_id}")
+async def get_audio(file_id: str):
+    """Serve generated audio files"""
+    from fastapi.responses import FileResponse
+    
+    # Security: validate file_id
+    if not file_id.replace('_', '').replace('-', '').isalnum():
+        raise HTTPException(status_code=400, detail="Invalid file ID")
+    
+    # Try different extensions
+    audio_dir = Path("uploads/audio")
+    for ext in ['wav', 'mp3', 'm4b']:
+        file_path = audio_dir / f"lesson_{file_id}.{ext}"
+        if file_path.exists():
+            return FileResponse(
+                file_path,
+                media_type=f"audio/{ext}",
+                filename=f"{file_id}.{ext}"
+            )
+    
+    raise HTTPException(status_code=404, detail="Audio file not found")
+
+@api_router.get("/health")
+async def health_check():
+    """Check API and AI gateway status"""
+    ai = get_ai_gateway()
+    audio_gen = get_audio_generator()
+    
+    return {
+        "status": "ok",
+        "timestamp": datetime.utcnow().isoformat(),
+        "services": {
+            "groq": ai.groq_key is not None,
+            "gemini": ai.gemini_key is not None,
+            "piper_tts": audio_gen.piper_available,
+            "elevenlabs": audio_gen.elevenlabs_key is not None
+        }
+    }
 
 # Router already included above

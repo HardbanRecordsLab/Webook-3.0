@@ -4,6 +4,7 @@ import { Plus, Trash2, FileText, HelpCircle, CheckCircle2, Sparkles, Upload, Ima
 import { streamAI, generateWorksheet, generateQuiz } from '@/services/aiService';
 import { uploadMedia } from '@/services/storageService';
 import { toast } from 'sonner';
+import AIToolsPanel from './AIToolsPanel';
 
 interface LessonEditorProps {
   lesson: Lesson;
@@ -15,6 +16,7 @@ const LessonEditor = ({ lesson, onUpdate }: LessonEditorProps) => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [showAITools, setShowAITools] = useState(false);
 
   const updateField = <K extends keyof Lesson>(key: K, value: Lesson[K]) => {
     onUpdate({ ...lesson, [key]: value });
@@ -208,24 +210,33 @@ const LessonEditor = ({ lesson, onUpdate }: LessonEditorProps) => {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto scrollbar-thin">
+    <div className="flex-1 overflow-y-auto scrollbar-thin relative">
       {/* Header */}
-      <div className="p-6 border-b border-border">
-        <input
-          value={lesson.title}
-          onChange={(e) => updateField('title', e.target.value)}
-          placeholder="Tytuł lekcji"
-          className="w-full text-3xl font-serif font-bold bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground/50 mb-2"
-        />
-        <input
-          value={lesson.subtitle}
-          onChange={(e) => updateField('subtitle', e.target.value)}
-          placeholder="Podtytuł lekcji (opcjonalnie)"
-          className="w-full text-lg bg-transparent border-none outline-none text-muted-foreground placeholder:text-muted-foreground/40"
-        />
+      <div className="p-6 border-b border-border flex justify-between items-start">
+        <div className="flex-1 mr-4">
+          <input
+            value={lesson.title}
+            onChange={(e) => updateField('title', e.target.value)}
+            placeholder="Tytuł lekcji"
+            className="w-full text-3xl font-serif font-bold bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground/50 mb-2"
+          />
+          <input
+            value={lesson.subtitle}
+            onChange={(e) => updateField('subtitle', e.target.value)}
+            placeholder="Podtytuł lekcji (opcjonalnie)"
+            className="w-full text-lg bg-transparent border-none outline-none text-muted-foreground placeholder:text-muted-foreground/40"
+          />
+        </div>
+        <button
+          onClick={() => setShowAITools(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all font-medium text-sm shadow-sm"
+        >
+          <Sparkles className="w-4 h-4" />
+          Narzędzia AI
+        </button>
       </div>
 
-      {/* AI Bar */}
+      {/* AI Bar (Legacy - kept for quick actions) */}
       <div className="px-6 py-3 border-b border-border bg-muted/30">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
@@ -444,6 +455,15 @@ const LessonEditor = ({ lesson, onUpdate }: LessonEditorProps) => {
           </div>
         )}
       </div>
+
+      {/* AI Tools Modal */}
+      {showAITools && (
+        <AIToolsPanel
+          lesson={lesson}
+          onUpdate={onUpdate}
+          onClose={() => setShowAITools(false)}
+        />
+      )}
     </div>
   );
 };

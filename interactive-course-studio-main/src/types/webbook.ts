@@ -3,6 +3,9 @@ export interface MediaFile {
   name: string;
   url: string;
   type: string;
+  provider?: string;
+  duration?: number;
+  prompt?: string;
 }
 
 export interface WorksheetQuestion {
@@ -31,6 +34,7 @@ export interface QuizQuestion {
 export interface Quiz {
   title: string;
   questions: QuizQuestion[];
+  passingScore?: number;
 }
 
 export interface Lesson {
@@ -45,6 +49,12 @@ export interface Lesson {
   };
   worksheet?: Worksheet;
   quiz?: Quiz;
+  learningObjectives?: string[];
+  glossaryTerms?: {
+    id: string;
+    term: string;
+    definition: string;
+  }[];
 }
 
 export interface Module {

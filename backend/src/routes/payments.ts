@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { supabase } from '../lib/supabase'
 
 const router = Router()
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-09-30.acacia' })
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-02-24.acacia' as any })
 
 // ── POST /api/payments/create-checkout ───────────────────
 const CheckoutSchema = z.object({
@@ -67,7 +67,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.CheckoutSession
+    const session = event.data.object as Stripe.Checkout.Session
     const { webookId } = session.metadata!
 
     // Update purchase status

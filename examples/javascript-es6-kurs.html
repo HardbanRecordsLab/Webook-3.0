@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JavaScript ES6+ — Kompletny Kurs | Webook Studio</title>
+<meta name="description" content="Naucz się nowoczesnego JavaScriptu od podstaw. Interaktywny kurs z quizami, fiszkami i ćwiczeniami praktycznymi.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@500;700;800;900&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   WEBOOK STUDIO 4.0 — JavaScript ES6+ Course
+   ═══════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#060E1C;--bg1:#0A1628;--bg2:#0F1F35;--bg3:#162844;--bg4:#1C3152;
+  --blue:#1E6FDB;--blue2:#2563EB;--gold:#F59E0B;--orange:#EA6C1E;
+  --ink:#F0F4FF;--ink2:#9BB0CC;--ink3:#4D6A8A;
+  --green:#34d399;--red:#f87171;--violet:#a78bfa;--amber:#fbbf24;--cyan:#22d3ee;
+  --font-d:'Cabinet Grotesk',system-ui,sans-serif;
+  --font-b:'DM Sans',system-ui,sans-serif;
+  --font-m:'JetBrains Mono',monospace;
+  --r:14px;
+  --transition:all 0.2s cubic-bezier(0.16,1,0.3,1);
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-b);background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 15% -5%,rgba(30,111,219,0.12) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 100%,rgba(234,108,30,0.08) 0%,transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 50%,rgba(30,111,219,0.04) 0%,transparent 70%);}
+::selection{background:rgba(30,111,219,0.35);color:#fff}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--blue)}
+
+/* ─── LAYOUT ─────────────────────────────── */
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:268px;flex-shrink:0;background:var(--bg1);border-right:1px solid rgba(255,255,255,0.05);
+  display:flex;flex-direction:column;overflow:hidden;transition:var(--transition)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* ─── SIDEBAR ─────────────────────────────── */
+.sidebar-header{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.sb-logo{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.sb-logo-badge{width:32px;height:32px;background:linear-gradient(135deg,var(--blue),var(--orange));border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sb-title{font-family:var(--font-d);font-weight:800;font-size:13px;color:var(--ink);line-height:1.2}
+.sb-author{font-size:11px;color:var(--ink3);margin-top:1px}
+.progress-section{background:var(--bg2);border-radius:12px;padding:12px}
+.progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.progress-label{font-size:11px;color:var(--ink3);font-family:var(--font-m)}
+.progress-pct{font-size:13px;font-weight:700;font-family:var(--font-m);
+  background:linear-gradient(135deg,var(--blue),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.progress-bar-outer{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.progress-bar-inner{height:100%;background:linear-gradient(90deg,var(--blue),var(--gold));border-radius:3px;
+  transition:width 0.6s cubic-bezier(0.16,1,0.3,1);width:0%}
+.stats-row{display:flex;gap:8px;margin-top:10px}
+.stat-chip{flex:1;background:var(--bg3);border-radius:8px;padding:6px 8px;text-align:center}
+.stat-chip-val{font-family:var(--font-d);font-weight:800;font-size:15px;color:var(--ink)}
+.stat-chip-lbl{font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;margin-top:1px}
+
+.toc-wrap{flex:1;overflow-y:auto;padding:8px}
+.toc-section{margin-bottom:4px}
+.toc-section-label{font-size:9px;font-family:var(--font-m);color:var(--ink3);text-transform:uppercase;
+  letter-spacing:0.15em;padding:8px 12px 4px}
+.toc-btn{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border-radius:10px;
+  background:transparent;border:none;color:var(--ink2);font-size:12px;font-family:var(--font-b);
+  font-weight:500;text-align:left;cursor:pointer;transition:var(--transition);position:relative}
+.toc-btn:hover{background:rgba(255,255,255,0.04);color:var(--ink)}
+.toc-btn.active{background:rgba(30,111,219,0.12);color:#E8F0FE;font-weight:600;border:1px solid rgba(30,111,219,0.2)}
+.toc-btn.done .toc-icon{color:var(--green)}
+.toc-btn.locked{opacity:0.5;cursor:default}
+.toc-icon{font-size:14px;flex-shrink:0}
+.toc-dot{width:6px;height:6px;border-radius:50%;background:var(--bg4);flex-shrink:0;margin-left:auto;transition:var(--transition)}
+.toc-btn.done .toc-dot{background:var(--green)}
+.toc-btn.active .toc-dot{background:var(--gold);box-shadow:0 0 6px var(--gold)}
+
+.sidebar-footer{padding:12px;border-top:1px solid rgba(255,255,255,0.05)}
+.cert-teaser{background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(234,108,30,0.08));
+  border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:12px;text-align:center}
+.cert-teaser-icon{font-size:24px;margin-bottom:6px}
+.cert-teaser-text{font-size:11px;color:var(--amber);font-weight:600;line-height:1.3}
+.cert-teaser-sub{font-size:10px;color:var(--ink3);margin-top:3px}
+
+/* ─── TOPBAR ───────────────────────────────── */
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 24px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  background:rgba(6,14,28,0.85);backdrop-filter:blur(20px);flex-shrink:0}
+.topbar-chapter{font-family:var(--font-d);font-weight:700;font-size:14px;color:var(--ink);
+  display:flex;align-items:center;gap:8px}
+.topbar-chapter-num{font-family:var(--font-m);font-size:11px;color:var(--ink3);
+  background:var(--bg2);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:2px 8px}
+.topbar-actions{margin-left:auto;display:flex;gap:6px;align-items:center}
+.topbar-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;
+  border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);
+  color:var(--ink2);font-size:12px;font-family:var(--font-b);font-weight:600;cursor:pointer;transition:var(--transition)}
+.topbar-btn:hover{background:rgba(255,255,255,0.08);color:var(--ink)}
+.topbar-btn.primary{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border-color:transparent;
+  box-shadow:0 0 20px rgba(30,111,219,0.25)}
+.topbar-btn.primary:hover{box-shadow:0 0 30px rgba(30,111,219,0.45)}
+
+/* ─── CONTENT ──────────────────────────────── */
+.content-scroll{flex:1;overflow-y:auto;padding:0}
+.content-wrap{max-width:700px;margin:0 auto;padding:40px 32px 80px}
+.chapter-section{display:none;animation:fadeSlide 0.4s cubic-bezier(0.16,1,0.3,1)}
+.chapter-section.visible{display:block}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+.chapter-hero{display:flex;align-items:flex-start;gap:16px;margin-bottom:36px;
+  padding:24px;background:var(--bg2);border-radius:20px;border:1px solid rgba(255,255,255,0.05)}
+.chapter-emoji-big{font-size:48px;line-height:1;flex-shrink:0}
+.chapter-hero-text{}
+.chapter-hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-family:var(--font-m);
+  color:var(--blue2);background:rgba(30,111,219,0.12);border:1px solid rgba(30,111,219,0.2);
+  border-radius:6px;padding:3px 10px;margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase}
+.chapter-title{font-family:var(--font-d);font-weight:900;font-size:28px;color:var(--ink);line-height:1.15;margin-bottom:8px}
+.chapter-desc{font-size:14px;color:var(--ink2);line-height:1.6}
+
+/* ─── BLOCKS ───────────────────────────────── */
+.block{margin-bottom:24px}
+.b-h2{font-family:var(--font-d);font-weight:800;font-size:22px;color:var(--ink);margin-bottom:4px;
+  padding-top:8px;border-top:1px solid rgba(255,255,255,0.05)}
+.b-h3{font-family:var(--font-d);font-weight:700;font-size:17px;color:rgba(240,244,255,0.85);margin-bottom:2px}
+.b-p{font-size:15px;color:var(--ink2);line-height:1.8}
+.b-p strong{color:var(--ink);font-weight:700}
+.b-p code{font-family:var(--font-m);font-size:13px;color:var(--green);
+  background:rgba(52,211,153,0.08);padding:2px 7px;border-radius:5px;border:1px solid rgba(52,211,153,0.15)}
+
+.b-quote{display:flex;gap:16px;padding:2px 0;margin:4px 0}
+.b-quote-bar{width:3px;flex-shrink:0;background:linear-gradient(to bottom,var(--green),#14b8a6);border-radius:2px}
+.b-quote-text{font-size:16px;font-style:italic;color:var(--ink2);line-height:1.65}
+
+.b-callout{display:flex;gap:14px;padding:16px 20px;border-radius:16px;border:1px solid}
+.b-callout.tip{background:rgba(30,111,219,0.07);border-color:rgba(30,111,219,0.25)}
+.b-callout.warning{background:rgba(245,158,11,0.07);border-color:rgba(245,158,11,0.25)}
+.b-callout.danger{background:rgba(239,68,68,0.07);border-color:rgba(239,68,68,0.25)}
+.b-callout.success{background:rgba(52,211,153,0.07);border-color:rgba(52,211,153,0.25)}
+.b-callout-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.b-callout-body{}
+.b-callout-title{font-weight:700;font-size:13px;color:var(--ink);margin-bottom:4px}
+.b-callout-text{font-size:13px;color:var(--ink2);line-height:1.6}
+
+.b-code{border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.07)}
+.b-code-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;
+  background:var(--bg3);border-bottom:1px solid rgba(255,255,255,0.06)}
+.b-code-dots{display:flex;gap:5px}
+.b-code-dot{width:11px;height:11px;border-radius:50%}
+.b-code-filename{font-family:var(--font-m);font-size:11px;color:var(--ink3);margin-left:8px}
+.b-code-copy{font-size:11px;font-family:var(--font-m);color:var(--ink3);background:none;border:none;cursor:pointer;
+  padding:4px 10px;border-radius:6px;transition:var(--transition)}
+.b-code-copy:hover{background:rgba(255,255,255,0.08);color:var(--ink)}
+.b-code pre{background:#070d1a;margin:0;padding:20px 24px;overflow-x:auto;line-height:1.75}
+.b-code code{font-family:var(--font-m);font-size:13.5px;color:#c9d1d9}
+/* Syntax highlight classes */
+.kw{color:#ff7b72}.fn{color:#d2a8ff}.str{color:#a5d6ff}.num{color:#79c0ff}
+.cm{color:#8b949e;font-style:italic}.op{color:#ff7b72}.id{color:#e3b341}
+.br{color:#9BB0CC}
+
+.b-divider{display:flex;align-items:center;gap:12px;padding:8px 0;margin:8px 0}
+.b-divider-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent)}
+.b-divider-icon{color:var(--ink3);font-size:12px}
+
+/* ─── KEYTERM ──────────────────────────────── */
+.b-keyterm{display:flex;gap:14px;padding:16px 20px;background:rgba(245,158,11,0.06);
+  border:1px solid rgba(245,158,11,0.2);border-radius:14px}
+.b-keyterm-key{font-size:18px;flex-shrink:0}
+.b-keyterm-term{font-family:var(--font-d);font-weight:800;font-size:15px;color:var(--amber);margin-bottom:4px}
+.b-keyterm-def{font-size:13px;color:var(--ink2);line-height:1.55}
+
+/* ─── STEPS ────────────────────────────────── */
+.b-steps{display:flex;flex-direction:column;gap:12px}
+.b-step{display:flex;gap:14px;align-items:flex-start}
+.b-step-num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue2));
+  display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;flex-shrink:0;
+  box-shadow:0 0 16px rgba(30,111,219,0.3)}
+.b-step-body{flex:1;background:var(--bg2);border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:14px 18px}
+.b-step-title{font-family:var(--font-d);font-weight:700;font-size:14px;color:var(--ink);margin-bottom:4px}
+.b-step-desc{font-size:13px;color:var(--ink2);line-height:1.55}
+.b-step-code{font-family:var(--font-m);font-size:12px;color:var(--green);
+  background:rgba(52,211,153,0.06);padding:8px 12px;border-radius:8px;margin-top:8px;overflow-x:auto;white-space:pre}
+
+/* ─── COMPARISON ───────────────────────────── */
+.b-comparison{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:4px}
+.b-comp-col{border-radius:16px;padding:18px}
+.b-comp-col.left{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2)}
+.b-comp-col.right{background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2)}
+.b-comp-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.b-comp-icon{font-size:18px}
+.b-comp-title{font-family:var(--font-d);font-weight:800;font-size:14px}
+.b-comp-col.left .b-comp-title{color:var(--red)}
+.b-comp-col.right .b-comp-title{color:var(--green)}
+.b-comp-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;font-size:13px;color:var(--ink2);line-height:1.4}
+.b-comp-item code{font-family:var(--font-m);font-size:12px;color:var(--amber)}
+
+/* ─── QUIZ ─────────────────────────────────── */
+.b-quiz{background:var(--bg2);border:1px solid rgba(245,158,11,0.2);border-radius:20px;padding:22px}
+.b-quiz-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-family:var(--font-m);
+  color:rgba(245,158,11,0.8);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:12px}
+.b-quiz-badge-dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+.b-quiz-q{font-family:var(--font-d);font-weight:800;font-size:18px;color:var(--ink);margin-bottom:18px;line-height:1.3}
+.b-quiz-opts{display:flex;flex-direction:column;gap:9px}
+.b-quiz-opt{display:flex;align-items:center;gap:14px;padding:13px 18px;border-radius:13px;
+  background:var(--bg3);border:1.5px solid rgba(255,255,255,0.07);cursor:pointer;
+  font-size:14px;color:var(--ink2);transition:var(--transition);font-family:var(--font-b)}
+.b-quiz-opt:hover:not(.disabled){border-color:rgba(30,111,219,0.4);background:rgba(30,111,219,0.07);color:var(--ink)}
+.b-quiz-opt.correct{border-color:rgba(52,211,153,0.5);background:rgba(52,211,153,0.08);color:#86efac}
+.b-quiz-opt.wrong{border-color:rgba(248,113,113,0.5);background:rgba(248,113,113,0.08);color:#fca5a5}
+.b-quiz-opt.disabled{pointer-events:none;cursor:default}
+.b-quiz-letter{width:30px;height:30px;border-radius:8px;background:var(--bg1);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;font-family:var(--font-m);
+  transition:var(--transition)}
+.b-quiz-opt.correct .b-quiz-letter{background:rgba(52,211,153,0.2)}
+.b-quiz-opt.wrong .b-quiz-letter{background:rgba(248,113,113,0.2)}
+.b-quiz-opt-text{flex:1}
+.b-quiz-opt-code{font-family:var(--font-m);font-size:12px;color:var(--green);
+  background:rgba(52,211,153,0.08);padding:2px 8px;border-radius:4px;margin-top:3px;display:inline-block}
+.b-quiz-feedback{margin-top:14px;padding:14px 18px;border-radius:12px;font-size:14px;font-weight:600;display:none;line-height:1.5}
+.b-quiz-feedback.show{display:block}
+.b-quiz-feedback.ok{background:rgba(52,211,153,0.08);color:var(--green);border:1px solid rgba(52,211,153,0.2)}
+.b-quiz-feedback.bad{background:rgba(248,113,113,0.08);color:var(--red);border:1px solid rgba(248,113,113,0.2)}
+.b-quiz-explanation{font-size:13px;font-weight:400;margin-top:6px;color:var(--ink2);opacity:0.9}
+.b-quiz-points{display:flex;align-items:center;gap:4px;font-size:11px;font-family:var(--font-m);color:var(--amber);margin-top:14px}
+
+/* ─── FLASHCARDS ───────────────────────────── */
+.b-flashcards{background:var(--bg2);border:1px solid rgba(139,92,246,0.2);border-radius:20px;padding:22px}
+.b-fc-badge{font-size:10px;font-family:var(--font-m);color:rgba(139,92,246,0.8);text-transform:uppercase;
+  letter-spacing:0.12em;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.b-fc-progress{font-size:11px;color:var(--ink3);margin-left:auto;font-family:var(--font-m)}
+.b-fc-wrap{height:170px;perspective:1000px;cursor:pointer;margin-bottom:14px}
+.b-fc-card{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.5s cubic-bezier(0.16,1,0.3,1)}
+.b-fc-card.flipped{transform:rotateY(180deg)}
+.b-fc-face{position:absolute;inset:0;border-radius:14px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px;text-align:center;backface-visibility:hidden}
+.b-fc-front{background:rgba(139,92,246,0.08);border:1.5px solid rgba(139,92,246,0.25)}
+.b-fc-back{background:rgba(52,211,153,0.06);border:1.5px solid rgba(52,211,153,0.25);transform:rotateY(180deg)}
+.b-fc-label{font-size:9px;font-family:var(--font-m);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:12px;opacity:0.5}
+.b-fc-front .b-fc-label{color:var(--violet)}
+.b-fc-back .b-fc-label{color:var(--green)}
+.b-fc-text{font-family:var(--font-d);font-weight:700;font-size:17px;color:var(--ink);line-height:1.35}
+.b-fc-code{font-family:var(--font-m);font-size:14px;color:var(--green);margin-top:8px;
+  background:rgba(52,211,153,0.08);padding:6px 14px;border-radius:8px;display:inline-block}
+.b-fc-hint{font-size:11px;color:var(--ink3);margin-top:10px}
+.b-fc-nav{display:flex;align-items:center;justify-content:space-between}
+.b-fc-btn{background:var(--bg3);border:1px solid rgba(255,255,255,0.07);border-radius:10px;
+  padding:8px 16px;color:var(--ink2);font-size:12px;font-weight:600;cursor:pointer;transition:var(--transition);font-family:var(--font-b)}
+.b-fc-btn:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+.b-fc-counter{font-family:var(--font-m);font-size:12px;color:var(--ink3)}
+
+/* ─── CHECKLIST ────────────────────────────── */
+.b-checklist{background:var(--bg2);border:1px solid rgba(255,255,255,0.06);border-radius:18px;padding:20px}
+.b-checklist-title{font-family:var(--font-d);font-weight:800;font-size:15px;color:var(--ink);margin-bottom:14px;
+  display:flex;align-items:center;gap:8px}
+.b-cl-progress{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-bottom:14px}
+.b-cl-progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:2px;transition:width 0.5s}
+.b-check-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer}
+.b-check-item:last-child{border-bottom:none;padding-bottom:0}
+.b-check-box{width:20px;height:20px;border-radius:6px;border:2px solid var(--ink3);flex-shrink:0;
+  transition:var(--transition);display:flex;align-items:center;justify-content:center;margin-top:1px}
+.b-check-item.done .b-check-box{background:var(--green);border-color:var(--green)}
+.b-check-item.done .b-check-text{text-decoration:line-through;color:var(--ink3)}
+.b-check-text{font-size:14px;color:var(--ink2);line-height:1.45;transition:var(--transition)}
+.b-check-code{font-family:var(--font-m);font-size:12px;color:var(--green);
+  background:rgba(52,211,153,0.07);padding:2px 8px;border-radius:4px;display:inline-block;margin-top:4px}
+.b-check-done-count{font-size:12px;font-family:var(--font-m);color:var(--ink3);margin-top:2px}
+
+/* ─── TABLE ────────────────────────────────── */
+.b-table-wrap{overflow-x:auto;border-radius:14px;border:1px solid rgba(255,255,255,0.07)}
+.b-table{width:100%;border-collapse:collapse;font-size:13px}
+.b-table th{background:var(--bg3);padding:11px 16px;text-align:left;font-weight:700;
+  color:var(--gold);border-bottom:1px solid rgba(255,255,255,0.07);font-family:var(--font-d);white-space:nowrap}
+.b-table td{padding:11px 16px;color:var(--ink2);border-bottom:1px solid rgba(255,255,255,0.04)}
+.b-table tr:last-child td{border-bottom:none}
+.b-table tr:hover td{background:rgba(255,255,255,0.02)}
+.b-table code{font-family:var(--font-m);font-size:12px;color:var(--green);
+  background:rgba(52,211,153,0.08);padding:2px 7px;border-radius:4px}
+
+/* ─── STATS ────────────────────────────────── */
+.b-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px}
+.b-stat{background:var(--bg2);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:18px;text-align:center}
+.b-stat-val{font-family:var(--font-d);font-weight:900;font-size:26px;
+  background:linear-gradient(135deg,var(--blue),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.b-stat-lbl{font-size:11px;color:var(--ink3);margin-top:4px;text-transform:uppercase;letter-spacing:0.08em}
+
+/* ─── TOGGLE ───────────────────────────────── */
+.b-toggle{border:1px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden;margin-bottom:4px}
+.b-toggle-header{display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--bg2);
+  cursor:pointer;font-weight:600;font-size:14px;color:var(--ink);user-select:none;transition:var(--transition)}
+.b-toggle-header:hover{background:var(--bg3)}
+.b-toggle-arrow{transition:transform 0.25s;font-size:11px;color:var(--ink3);flex-shrink:0}
+.b-toggle.open .b-toggle-arrow{transform:rotate(90deg)}
+.b-toggle-body{max-height:0;overflow:hidden;transition:max-height 0.35s cubic-bezier(0.16,1,0.3,1)}
+.b-toggle.open .b-toggle-body{max-height:800px}
+.b-toggle-content{padding:16px 18px;font-size:14px;color:var(--ink2);line-height:1.65;
+  background:rgba(255,255,255,0.015);border-top:1px solid rgba(255,255,255,0.05)}
+.b-toggle-content pre{font-family:var(--font-m);font-size:12.5px;color:var(--green);
+  background:rgba(52,211,153,0.05);padding:12px 16px;border-radius:10px;margin-top:10px;overflow-x:auto;
+  border:1px solid rgba(52,211,153,0.1)}
+
+/* ─── TIMELINE ─────────────────────────────── */
+.b-timeline{display:flex;flex-direction:column}
+.b-tl-item{display:flex;gap:16px}
+.b-tl-track{display:flex;flex-direction:column;align-items:center}
+.b-tl-dot{width:14px;height:14px;border-radius:50%;background:var(--bg2);border:2.5px solid var(--blue);flex-shrink:0;margin-top:3px;
+  box-shadow:0 0 10px rgba(30,111,219,0.3);transition:var(--transition)}
+.b-tl-item.done .b-tl-dot{background:var(--green);border-color:var(--green);box-shadow:0 0 10px rgba(52,211,153,0.3)}
+.b-tl-line{width:2px;flex:1;background:linear-gradient(to bottom,rgba(30,111,219,0.25),transparent);margin-top:4px}
+.b-tl-content{flex:1;padding-bottom:24px}
+.b-tl-year{font-family:var(--font-m);font-size:11px;color:var(--gold);font-weight:700;margin-bottom:4px}
+.b-tl-title{font-family:var(--font-d);font-weight:700;font-size:15px;color:var(--ink);margin-bottom:4px}
+.b-tl-desc{font-size:13px;color:var(--ink2);line-height:1.55}
+.b-tl-code{font-family:var(--font-m);font-size:12px;color:var(--cyan);margin-top:6px;
+  background:rgba(34,211,238,0.06);padding:4px 10px;border-radius:6px;display:inline-block}
+
+/* ─── NAV BAR ──────────────────────────────── */
+.navbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;
+  border-top:1px solid rgba(255,255,255,0.05);background:rgba(10,22,40,0.9);
+  backdrop-filter:blur(20px);flex-shrink:0}
+.nav-btn{display:flex;align-items:center;gap:8px;padding:11px 22px;border-radius:12px;
+  border:1px solid rgba(255,255,255,0.09);background:rgba(255,255,255,0.04);
+  color:var(--ink2);font-size:13px;font-family:var(--font-b);font-weight:600;cursor:pointer;transition:var(--transition)}
+.nav-btn:hover:not(:disabled){background:rgba(255,255,255,0.08);color:var(--ink)}
+.nav-btn:disabled{opacity:0.3;cursor:default;pointer-events:none}
+.nav-btn.next{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border-color:transparent;
+  box-shadow:0 0 20px rgba(30,111,219,0.3)}
+.nav-btn.next:hover{box-shadow:0 0 30px rgba(30,111,219,0.5)}
+.nav-btn.finish{background:linear-gradient(135deg,var(--gold),var(--orange));color:#fff;border-color:transparent;
+  box-shadow:0 0 20px rgba(245,158,11,0.3)}
+.nav-center{display:flex;flex-direction:column;align-items:center;gap:6px}
+.nav-dots{display:flex;gap:5px}
+.nav-dot{height:4px;border-radius:2px;transition:all 0.35s cubic-bezier(0.16,1,0.3,1)}
+.nav-dot.done{width:14px;background:rgba(52,211,153,0.5)}
+.nav-dot.active{width:28px;background:var(--gold);box-shadow:0 0 8px rgba(245,158,11,0.4)}
+.nav-dot.inactive{width:14px;background:var(--bg4)}
+.nav-label{font-family:var(--font-m);font-size:10px;color:var(--ink3)}
+
+/* ─── MODALS ───────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(16px);
+  display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;opacity:0;
+  pointer-events:none;transition:opacity 0.25s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg1);border:1px solid rgba(255,255,255,0.08);border-radius:24px;
+  max-width:480px;width:100%;padding:36px;position:relative;
+  transform:scale(0.9) translateY(20px);transition:all 0.3s cubic-bezier(0.16,1,0.3,1)}
+.modal-overlay.open .modal{transform:scale(1) translateY(0)}
+.modal-close{position:absolute;top:16px;right:16px;background:var(--bg3);border:none;border-radius:8px;
+  width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  color:var(--ink3);cursor:pointer;font-size:16px;transition:var(--transition)}
+.modal-close:hover{background:var(--bg4);color:var(--ink)}
+
+/* ─── CERTIFICATE ──────────────────────────── */
+.cert-content{text-align:center}
+.cert-badge{width:80px;height:80px;background:linear-gradient(135deg,var(--gold),var(--orange));
+  border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;
+  margin:0 auto 20px;box-shadow:0 0 40px rgba(245,158,11,0.3)}
+.cert-title{font-family:var(--font-d);font-weight:900;font-size:24px;color:var(--ink);margin-bottom:8px}
+.cert-subtitle{font-size:14px;color:var(--ink2);margin-bottom:24px;line-height:1.5}
+.cert-card{background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(234,108,30,0.06));
+  border:1px solid rgba(245,158,11,0.2);border-radius:16px;padding:20px;margin-bottom:20px}
+.cert-name{font-family:var(--font-d);font-weight:900;font-size:20px;color:var(--amber);margin-bottom:4px}
+.cert-course{font-size:13px;color:var(--ink2)}
+.cert-date{font-size:12px;color:var(--ink3);font-family:var(--font-m);margin-top:6px}
+.cert-code{font-family:var(--font-m);font-size:11px;color:var(--ink3);
+  background:var(--bg3);border-radius:6px;padding:4px 12px;display:inline-block}
+.cert-actions{display:flex;gap:10px;justify-content:center}
+.btn-primary{display:flex;align-items:center;gap:8px;padding:12px 24px;border-radius:12px;
+  background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;font-size:13px;font-weight:700;
+  border:none;cursor:pointer;font-family:var(--font-b);transition:var(--transition)}
+.btn-primary:hover{box-shadow:0 0 20px rgba(30,111,219,0.4)}
+.btn-ghost{display:flex;align-items:center;gap:8px;padding:12px 24px;border-radius:12px;
+  background:transparent;color:var(--ink2);font-size:13px;font-weight:600;
+  border:1px solid rgba(255,255,255,0.1);cursor:pointer;font-family:var(--font-b);transition:var(--transition)}
+.btn-ghost:hover{background:rgba(255,255,255,0.05);color:var(--ink)}
+
+/* ─── TOOLS (iframes) ──────────────────────── */
+.b-tool{border-radius:18px;overflow:hidden;border:1px solid rgba(245,158,11,0.15);
+  background:var(--bg2)}
+.b-tool iframe{width:100%;border:none;display:block}
+
+/* ─── HIGHLIGHT BOX ────────────────────────── */
+.b-highlight{padding:18px 22px;border-radius:16px;font-size:14px;color:var(--ink2);line-height:1.65}
+.b-highlight.blue{background:linear-gradient(135deg,rgba(30,111,219,0.08),rgba(37,99,235,0.04));border:1px solid rgba(30,111,219,0.2)}
+.b-highlight.purple{background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(109,28,209,0.04));border:1px solid rgba(139,92,246,0.2)}
+.b-highlight strong{color:var(--ink);font-weight:700}
+
+/* ─── RESPONSIVE ───────────────────────────── */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .content-wrap{padding:24px 16px 80px}
+  .chapter-title{font-size:22px}
+  .b-comparison{grid-template-columns:1fr}
+  .b-fc-wrap{height:150px}
+  .navbar{padding:12px 16px}
+  .nav-btn{padding:9px 16px;font-size:12px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ══ SIDEBAR ══════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sb-logo">
+      <div class="sb-logo-badge">⚡</div>
+      <div>
+        <div class="sb-title">JavaScript ES6+</div>
+        <div class="sb-author">by Anna Kowalska · Webook Studio</div>
+      </div>
+    </div>
+    <div class="progress-section">
+      <div class="progress-header">
+        <div class="progress-label">Postęp kursu</div>
+        <div class="progress-pct" id="pct-label">0%</div>
+      </div>
+      <div class="progress-bar-outer"><div class="progress-bar-inner" id="pbar"></div></div>
+      <div class="stats-row">
+        <div class="stat-chip"><div class="stat-chip-val" id="stat-done">0</div><div class="stat-chip-lbl">Ukończone</div></div>
+        <div class="stat-chip"><div class="stat-chip-val" id="stat-score">0</div><div class="stat-chip-lbl">Punkty</div></div>
+        <div class="stat-chip"><div class="stat-chip-val">5</div><div class="stat-chip-lbl">Rozdziały</div></div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="toc-wrap">
+    <div class="toc-section-label">Moduł 1 — Podstawy ES6</div>
+    <button class="toc-btn active" id="toc-0" onclick="goTo(0)"><span class="toc-icon">🚀</span> Wstęp i Setup<div class="toc-dot"></div></button>
+    <button class="toc-btn" id="toc-1" onclick="goTo(1)"><span class="toc-icon">🔤</span> Let, Const i Scope<div class="toc-dot"></div></button>
+    <button class="toc-btn" id="toc-2" onclick="goTo(2)"><span class="toc-icon">➡️</span> Arrow Functions<div class="toc-dot"></div></button>
+    <div class="toc-section-label">Moduł 2 — Zaawansowane</div>
+    <button class="toc-btn" id="toc-3" onclick="goTo(3)"><span class="toc-icon">📦</span> Destrukturyzacja<div class="toc-dot"></div></button>
+    <button class="toc-btn" id="toc-4" onclick="goTo(4)"><span class="toc-icon">🏆</span> Promises & Async<div class="toc-dot"></div></button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="cert-teaser">
+      <div class="cert-teaser-icon">🏅</div>
+      <div class="cert-teaser-text">Certyfikat ukończenia</div>
+      <div class="cert-teaser-sub">Ukończ wszystkie 5 rozdziałów</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ═════════════════════════════════ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-chapter">
+      <span id="topbar-emoji">🚀</span>
+      <span id="topbar-title">Wstęp i Setup</span>
+      <span class="topbar-chapter-num" id="topbar-num">01 / 05</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="topbar-btn" onclick="alert('Notatki — funkcja w v4.1')">📝 Notatki</button>
+      <button class="topbar-btn" onclick="alert('Wyszukaj w kursie...')">🔍 Szukaj</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content-scroll">
+    <div class="content-wrap">
+
+    <!-- ═══════════════════════════════════════════
+         ROZDZIAŁ 0 — WSTĘP I SETUP
+         ═══════════════════════════════════════════ -->
+    <section class="chapter-section visible" id="ch-0">
+
+      <div class="chapter-hero">
+        <div class="chapter-emoji-big">🚀</div>
+        <div class="chapter-hero-text">
+          <div class="chapter-hero-badge">Moduł 1 · Rozdział 1</div>
+          <div class="chapter-title">Wstęp do JavaScript ES6+</div>
+          <div class="chapter-desc">Poznaj historię nowoczesnego JavaScriptu, dowiedz się dlaczego ES6 to przełom i skonfiguruj swoje środowisko pracy. Po tym rozdziale będziesz gotowy do pisania nowoczesnego kodu.</div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-stats">
+          <div class="b-stat"><div class="b-stat-val">2015</div><div class="b-stat-lbl">Rok wydania ES6</div></div>
+          <div class="b-stat"><div class="b-stat-val">100+</div><div class="b-stat-lbl">Nowych funkcji</div></div>
+          <div class="b-stat"><div class="b-stat-val">98%</div><div class="b-stat-lbl">Wsparcie przeglądarek</div></div>
+          <div class="b-stat"><div class="b-stat-val">∞</div><div class="b-stat-lbl">Możliwości</div></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-h2">Czym jest ECMAScript 6?</div>
+        <p class="b-p">ECMAScript 6 (ES6), znany też jako ES2015, to przełomowa wersja standardu JavaScript wydana w czerwcu 2015. Wprowadziła tak wiele zmian, że wielu programistów mówi o &quot;przed ES6&quot; i &quot;po ES6&quot; jakby to były dwa różne języki.</p>
+      </div>
+
+      <div class="block">
+        <div class="b-callout tip">
+          <div class="b-callout-icon">💡</div>
+          <div class="b-callout-body">
+            <div class="b-callout-title">Dlaczego warto uczyć się ES6+ teraz?</div>
+            <div class="b-callout-text">Wszystkie nowoczesne frameworki — React, Vue, Angular — wymagają znajomości ES6+. Bez tej wiedzy nie możesz efektywnie czytać ani pisać kodu produkcyjnego w 2024 roku.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-timeline">
+          <div class="b-tl-item done">
+            <div class="b-tl-track"><div class="b-tl-dot"></div><div class="b-tl-line"></div></div>
+            <div class="b-tl-content">
+              <div class="b-tl-year">1995</div>
+              <div class="b-tl-title">Narodziny JavaScript</div>
+              <div class="b-tl-desc">Brendan Eich tworzy JS w ciągu 10 dni dla Netscape Navigator.</div>
+            </div>
+          </div>
+          <div class="b-tl-item done">
+            <div class="b-tl-track"><div class="b-tl-dot"></div><div class="b-tl-line"></div></div>
+            <div class="b-tl-content">
+              <div class="b-tl-year">2009</div>
+              <div class="b-tl-title">ES5 — Stabilizacja</div>
+              <div class="b-tl-desc">Pierwsza duża aktualizacja — strict mode, JSON, Array methods.</div>
+              <div class="b-tl-code">Array.prototype.forEach, JSON.parse()</div>
+            </div>
+          </div>
+          <div class="b-tl-item done">
+            <div class="b-tl-track"><div class="b-tl-dot"></div><div class="b-tl-line"></div></div>
+            <div class="b-tl-content">
+              <div class="b-tl-year">2015</div>
+              <div class="b-tl-title">ES6 / ES2015 — Rewolucja</div>
+              <div class="b-tl-desc">Klasy, moduły, arrow functions, destructuring, Promises, template literals i wiele więcej.</div>
+              <div class="b-tl-code">const, let, class, =>, import/export, Promise</div>
+            </div>
+          </div>
+          <div class="b-tl-item">
+            <div class="b-tl-track"><div class="b-tl-dot"></div><div class="b-tl-line"></div></div>
+            <div class="b-tl-content">
+              <div class="b-tl-year">2017+</div>
+              <div class="b-tl-title">ES2017–2024 — Ewolucja</div>
+              <div class="b-tl-desc">Corocznie nowe funkcje: async/await (2017), Optional chaining (2020), nullish coalescing, at().</div>
+              <div class="b-tl-code">async/await, ?., ??, Array.at()</div>
+            </div>
+          </div>
+          <div class="b-tl-item">
+            <div class="b-tl-track"><div class="b-tl-dot"></div></div>
+            <div class="b-tl-content">
+              <div class="b-tl-year">2025</div>
+              <div class="b-tl-title">Przyszłość — Ty jesteś tutaj</div>
+              <div class="b-tl-desc">Naucz się wszystkich tych możliwości w tym kursie.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-h2">Setup środowiska</div>
+        <div class="b-steps">
+          <div class="b-step">
+            <div class="b-step-num">1</div>
+            <div class="b-step-body">
+              <div class="b-step-title">Zainstaluj Node.js</div>
+              <div class="b-step-desc">Pobierz Node.js (LTS) ze strony nodejs.org. Node.js pozwala uruchamiać JavaScript poza przeglądarką.</div>
+              <pre class="b-step-code">node --version  # v22.x.x
+npm --version   # 10.x.x</pre>
+            </div>
+          </div>
+          <div class="b-step">
+            <div class="b-step-num">2</div>
+            <div class="b-step-body">
+              <div class="b-step-title">Zainstaluj VS Code</div>
+              <div class="b-step-desc">Visual Studio Code to najpopularniejszy edytor kodu. Pobierz z code.visualstudio.com i zainstaluj rozszerzenia: ESLint, Prettier, GitLens.</div>
+            </div>
+          </div>
+          <div class="b-step">
+            <div class="b-step-num">3</div>
+            <div class="b-step-body">
+              <div class="b-step-title">Utwórz projekt</div>
+              <div class="b-step-desc">Stwórz folder i plik index.js — gotowe!</div>
+              <pre class="b-step-code">mkdir moj-projekt && cd moj-projekt
+touch index.js
+node index.js</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUIZ 1 -->
+      <div class="block b-quiz" id="quiz-0">
+        <div class="b-quiz-badge"><div class="b-quiz-badge-dot"></div> Sprawdź wiedzę · Quiz 1</div>
+        <div class="b-quiz-q">W którym roku wydano ES6 (ECMAScript 2015)?</div>
+        <div class="b-quiz-opts">
+          <div class="b-quiz-opt" onclick="answerQuiz(0,'A',false,'quiz-0')">
+            <div class="b-quiz-letter">A</div><div class="b-quiz-opt-text">2009</div>
+          </div>
+          <div class="b-quiz-opt" onclick="answerQuiz(0,'B',false,'quiz-0')">
+            <div class="b-quiz-letter">B</div><div class="b-quiz-opt-text">2012</div>
+          </div>
+          <div class="b-quiz-opt" onclick="answerQuiz(0,'C',true,'quiz-0','ES6 (ES2015) został wydany w czerwcu 2015 roku i stał się przełomem w historii JavaScript.')">
+            <div class="b-quiz-letter">C</div><div class="b-quiz-opt-text">2015</div>
+          </div>
+          <div class="b-quiz-opt" onclick="answerQuiz(0,'D',false,'quiz-0')">
+            <div class="b-quiz-letter">D</div><div class="b-quiz-opt-text">2018</div>
+          </div>
+        </div>
+        <div class="b-quiz-feedback" id="fb-quiz-0"></div>
+        <div class="b-quiz-points" id="pts-quiz-0">⭐ 1 punkt za poprawną odpowiedź</div>
+      </div>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         ROZDZIAŁ 1 — LET, CONST I SCOPE
+         ═══════════════════════════════════════════ -->
+    <section class="chapter-section" id="ch-1">
+
+      <div class="chapter-hero">
+        <div class="chapter-emoji-big">🔤</div>
+        <div class="chapter-hero-text">
+          <div class="chapter-hero-badge">Moduł 1 · Rozdział 2</div>
+          <div class="chapter-title">let, const i Scope</div>
+          <div class="chapter-desc">Pożegnaj var na zawsze. Naucz się jak <code>let</code> i <code>const</code> rozwiązują klasyczne problemy ze scope i hoistingiem w JavaScript.</div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-comparison">
+          <div class="b-comp-col left">
+            <div class="b-comp-header"><div class="b-comp-icon">❌</div><div class="b-comp-title">Stary sposób (var)</div></div>
+            <div class="b-comp-item"><span style="color:var(--red)">✗</span>&nbsp; Function scope — nie blokowy</div>
+            <div class="b-comp-item"><span style="color:var(--red)">✗</span>&nbsp; Hoisting do góry funkcji</div>
+            <div class="b-comp-item"><span style="color:var(--red)">✗</span>&nbsp; Można deklarować ponownie</div>
+            <div class="b-comp-item"><span style="color:var(--red)">✗</span>&nbsp; <code>i</code> wycieka z pętli for</div>
+          </div>
+          <div class="b-comp-col right">
+            <div class="b-comp-header"><div class="b-comp-icon">✅</div><div class="b-comp-title">Nowy sposób (let/const)</div></div>
+            <div class="b-comp-item"><span style="color:var(--green)">✓</span>&nbsp; Block scope — czyste granice</div>
+            <div class="b-comp-item"><span style="color:var(--green)">✓</span>&nbsp; Temporal Dead Zone (TDZ)</div>
+            <div class="b-comp-item"><span style="color:var(--green)">✓</span>&nbsp; Brak podwójnych deklaracji</div>
+            <div class="b-comp-item"><span style="color:var(--green)">✓</span>&nbsp; <code>const</code> dla stałych wartości</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-code">
+          <div class="b-code-header">
+            <div class="b-code-dots"><div class="b-code-dot" style="background:#f87171"></div><div class="b-code-dot" style="background:#fbbf24"></div><div class="b-code-dot" style="background:#34d399"></div></div>
+            <span class="b-code-filename">scope-demo.js</span>
+            <button class="b-code-copy" onclick="copyCode(this)">Kopiuj</button>
+          </div>
+          <pre><code><span class="cm">// ❌ Problem z var — wyciek zmiennej</span>
+<span class="kw">for</span> (<span class="kw">var</span> <span class="id">i</span> = <span class="num">0</span>; <span class="id">i</span> < <span class="num">3</span>; <span class="id">i</span>++) {
+  setTimeout(() => console.log(<span class="id">i</span>), <span class="num">100</span>)
+}
+<span class="cm">// Wynik: 3 3 3  ← bug!</span>
+
+<span class="cm">// ✅ Rozwiązanie z let — block scope</span>
+<span class="kw">for</span> (<span class="kw">let</span> <span class="id">j</span> = <span class="num">0</span>; <span class="id">j</span> < <span class="num">3</span>; <span class="id">j</span>++) {
+  setTimeout(() => console.log(<span class="id">j</span>), <span class="num">100</span>)
+}
+<span class="cm">// Wynik: 0 1 2  ← poprawnie!</span>
+
+<span class="cm">// const — wartość niezmieniana</span>
+<span class="kw">const</span> <span class="id">PI</span> = <span class="num">3.14159</span>
+<span class="kw">const</span> <span class="id">user</span> = { name: <span class="str">'Anna'</span> }
+<span class="id">user</span>.name = <span class="str">'Kasia'</span>  <span class="cm">// ✅ OK — modyfikacja obiektu</span>
+<span class="cm">// user = {}  // ❌ Error — reassignment!</span></code></pre>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-keyterm">
+          <div class="b-keyterm-key">🔑</div>
+          <div>
+            <div class="b-keyterm-term">Block Scope</div>
+            <div class="b-keyterm-def">Zmienna zadeklarowana z <code>let</code> lub <code>const</code> istnieje tylko w bloku <code>{ }</code> w którym została zadeklarowana. Poza nim jest niedostępna — to eliminuje klasyczne bugi z <code>var</code>.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-keyterm">
+          <div class="b-keyterm-key">🔑</div>
+          <div>
+            <div class="b-keyterm-term">Temporal Dead Zone (TDZ)</div>
+            <div class="b-keyterm-def">Strefa między początkiem bloku a deklaracją <code>let</code>/<code>const</code>, gdzie próba użycia zmiennej rzuca <code>ReferenceError</code>. Chroni przed bugyami hoistingu.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FISZKI -->
+      <div class="block b-flashcards" id="fc-1">
+        <div class="b-fc-badge">
+          🃏 Fiszki — let vs const vs var
+          <span class="b-fc-progress" id="fc-1-counter">1 / 5</span>
+        </div>
+        <div class="b-fc-wrap" onclick="flipFC(1)">
+          <div class="b-fc-card" id="fc-1-card">
+            <div class="b-fc-face b-fc-front">
+              <div class="b-fc-label">pytanie — kliknij by obrócić</div>
+              <div class="b-fc-text" id="fc-1-front">Czym różni się <code>const</code> od <code>let</code>?</div>
+            </div>
+            <div class="b-fc-face b-fc-back">
+              <div class="b-fc-label">odpowiedź</div>
+              <div class="b-fc-text" id="fc-1-back"><code>const</code> nie pozwala na reassignment (zmianę referencji), <code>let</code> tak. Obydwa mają block scope.</div>
+            </div>
+          </div>
+        </div>
+        <div class="b-fc-nav">
+          <button class="b-fc-btn" onclick="prevFC(1)">← Poprzednia</button>
+          <button class="b-fc-btn" onclick="nextFC(1)">Następna →</button>
+        </div>
+      </div>
+
+      <!-- QUIZ 2 -->
+      <div class="block b-quiz" id="quiz-1">
+        <div class="b-quiz-badge"><div class="b-quiz-badge-dot"></div> Quiz 2 · 2 punkty</div>
+        <div class="b-quiz-q">Co wypisze poniższy kod?
+          <div class="b-quiz-opt-code" style="margin-top:10px">const arr = [1,2,3]; arr.push(4); console.log(arr.length)</div>
+        </div>
+        <div class="b-quiz-opts">
+          <div class="b-quiz-opt" onclick="answerQuiz(1,'A',false,'quiz-1')"><div class="b-quiz-letter">A</div><div class="b-quiz-opt-text">TypeError — const jest niemutowalne</div></div>
+          <div class="b-quiz-opt" onclick="answerQuiz(1,'B',true,'quiz-1','const blokuje reassignment referencji, ale nie modyfikację wartości obiektu/tablicy. arr.push(4) mutuje tablicę w miejscu — to jest dozwolone.')">
+            <div class="b-quiz-letter">B</div><div class="b-quiz-opt-text">4 — tablica ma teraz 4 elementy</div></div>
+          <div class="b-quiz-opt" onclick="answerQuiz(1,'C',false,'quiz-1')"><div class="b-quiz-letter">C</div><div class="b-quiz-opt-text">3 — push nie działa z const</div></div>
+          <div class="b-quiz-opt" onclick="answerQuiz(1,'D',false,'quiz-1')"><div class="b-quiz-letter">D</div><div class="b-quiz-opt-text">undefined</div></div>
+        </div>
+        <div class="b-quiz-feedback" id="fb-quiz-1"></div>
+        <div class="b-quiz-points" id="pts-quiz-1">⭐ 2 punkty za poprawną odpowiedź</div>
+      </div>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         ROZDZIAŁ 2 — ARROW FUNCTIONS
+         ═══════════════════════════════════════════ -->
+    <section class="chapter-section" id="ch-2">
+
+      <div class="chapter-hero">
+        <div class="chapter-emoji-big">➡️</div>
+        <div class="chapter-hero-text">
+          <div class="chapter-hero-badge">Moduł 1 · Rozdział 3</div>
+          <div class="chapter-title">Arrow Functions</div>
+          <div class="chapter-desc">Krótszy, bardziej elegancki zapis funkcji. Ale to nie tylko składnia — arrow functions mają inne zachowanie <code>this</code>, co eliminuje całą klasę bugów.</div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-code">
+          <div class="b-code-header">
+            <div class="b-code-dots"><div class="b-code-dot" style="background:#f87171"></div><div class="b-code-dot" style="background:#fbbf24"></div><div class="b-code-dot" style="background:#34d399"></div></div>
+            <span class="b-code-filename">arrow-functions.js</span>
+            <button class="b-code-copy" onclick="copyCode(this)">Kopiuj</button>
+          </div>
+          <pre><code><span class="cm">// Stary zapis (function keyword)</span>
+<span class="kw">function</span> <span class="fn">dodaj</span>(<span class="id">a</span>, <span class="id">b</span>) {
+  <span class="kw">return</span> <span class="id">a</span> + <span class="id">b</span>
+}
+
+<span class="cm">// Arrow function — pełna składnia</span>
+<span class="kw">const</span> <span class="fn">dodaj</span> = (<span class="id">a</span>, <span class="id">b</span>) => {
+  <span class="kw">return</span> <span class="id">a</span> + <span class="id">b</span>
+}
+
+<span class="cm">// Arrow function — implicit return (1 wyrażenie)</span>
+<span class="kw">const</span> <span class="fn">dodaj</span> = (<span class="id">a</span>, <span class="id">b</span>) => <span class="id">a</span> + <span class="id">b</span>
+
+<span class="cm">// 1 parametr — bez nawiasów</span>
+<span class="kw">const</span> <span class="fn">kwadrat</span> = <span class="id">x</span> => <span class="id">x</span> ** <span class="num">2</span>
+
+<span class="cm">// 0 parametrów — puste nawiasy</span>
+<span class="kw">const</span> <span class="fn">losowa</span> = () => Math.<span class="fn">random</span>()
+
+<span class="cm">// W praktyce — Array methods</span>
+<span class="kw">const</span> <span class="id">liczby</span> = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+<span class="kw">const</span> <span class="id">parzyste</span> = <span class="id">liczby</span>.<span class="fn">filter</span>(<span class="id">n</span> => <span class="id">n</span> % <span class="num">2</span> === <span class="num">0</span>)  <span class="cm">// [2, 4]</span>
+<span class="kw">const</span> <span class="id">podwojone</span> = <span class="id">liczby</span>.<span class="fn">map</span>(<span class="id">n</span> => <span class="id">n</span> * <span class="num">2</span>)  <span class="cm">// [2,4,6,8,10]</span>
+<span class="kw">const</span> <span class="id">suma</span> = <span class="id">liczby</span>.<span class="fn">reduce</span>((<span class="id">acc</span>, <span class="id">n</span>) => <span class="id">acc</span> + <span class="id">n</span>, <span class="num">0</span>)  <span class="cm">// 15</span></code></pre>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-callout warning">
+          <div class="b-callout-icon">⚠️</div>
+          <div class="b-callout-body">
+            <div class="b-callout-title">Arrow functions i this — ważna różnica!</div>
+            <div class="b-callout-text">Arrow functions nie mają własnego <code>this</code> — dziedziczą go z otaczającego kontekstu (lexical this). To rozwiązuje słynny problem z <code>var self = this</code> w callbackach.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-code">
+          <div class="b-code-header">
+            <div class="b-code-dots"><div class="b-code-dot" style="background:#f87171"></div><div class="b-code-dot" style="background:#fbbf24"></div><div class="b-code-dot" style="background:#34d399"></div></div>
+            <span class="b-code-filename">this-context.js</span>
+            <button class="b-code-copy" onclick="copyCode(this)">Kopiuj</button>
+          </div>
+          <pre><code><span class="cm">// ❌ Problem z function (stary sposób)</span>
+<span class="kw">function</span> <span class="fn">Timer</span>() {
+  <span class="kw">this</span>.seconds = <span class="num">0</span>
+  setInterval(<span class="kw">function</span>() {
+    <span class="kw">this</span>.seconds++  <span class="cm">// this = window, nie Timer!</span>
+  }, <span class="num">1000</span>)
+}
+
+<span class="cm">// ✅ Rozwiązanie z arrow function</span>
+<span class="kw">function</span> <span class="fn">Timer</span>() {
+  <span class="kw">this</span>.seconds = <span class="num">0</span>
+  setInterval(() => {
+    <span class="kw">this</span>.seconds++  <span class="cm">// this = Timer ✓</span>
+  }, <span class="num">1000</span>)
+}</code></pre>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE TOOL: Kalkulator funkcji -->
+      <div class="block">
+        <div class="b-h3">🛠 Interaktywne ćwiczenie — Przetestuj funkcje</div>
+        <div class="b-tool" style="margin-top:12px">
+          <iframe sandbox="allow-scripts" style="height:320px" srcdoc='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#060E1C;color:#F0F4FF;padding:20px;height:320px;display:flex;flex-direction:column;gap:12px}.title{font-size:14px;font-weight:800;color:#F0F4FF;margin-bottom:4px}.row{display:flex;gap:10px;align-items:center}.label{font-size:11px;color:#4D6A8A;width:100px;flex-shrink:0}.inp{flex:1;background:#0F1F35;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;color:#F0F4FF;font-size:13px;font-family:inherit;outline:none}.inp:focus{border-color:rgba(30,111,219,0.5)}.select{flex:1;background:#0F1F35;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px;color:#F0F4FF;font-size:13px;outline:none}.result{flex:1;background:linear-gradient(135deg,rgba(30,111,219,0.1),rgba(234,108,30,0.07));border:1px solid rgba(30,111,219,0.2);border-radius:10px;padding:10px 14px;font-size:20px;font-weight:800;text-align:center}.result-label{font-size:10px;color:#4D6A8A;text-align:center;margin-top:2px}.preview{background:#070d1a;border:1px solid rgba(52,211,153,0.15);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:12px;color:#86efac;flex:1}</style></head><body><div class="title">Kalkulator Arrow Function</div><div class="row"><span class="label">Liczba A</span><input class="inp" id="a" type="number" value="8" oninput="calc()"></div><div class="row"><span class="label">Liczba B</span><input class="inp" id="b" type="number" value="3" oninput="calc()"></div><div class="row"><span class="label">Operacja</span><select class="select" id="op" onchange="calc()"><option value="add">Dodawanie (+)</option><option value="sub">Odejmowanie (-)</option><option value="mul">Mnożenie (*)</option><option value="div">Dzielenie (/)</option><option value="pow">Potęga (**)</option></select></div><div class="row"><div style="flex:1"><div class="result" id="result">11</div><div class="result-label">Wynik</div></div></div><div class="preview" id="preview">const fn = (a, b) => a + b</div><script>function calc(){const a=+document.getElementById("a").value;const b=+document.getElementById("b").value;const op=document.getElementById("op").value;const ops={add:[a+b,"a + b","+"],sub:[a-b,"a - b","-"],mul:[a*b,"a * b","*"],div:[b!==0?(a/b).toFixed(3):"∞","a / b","/"],pow:[Math.pow(a,b).toFixed(2),"a ** b","**"]};const[res,expr,sym]=ops[op];document.getElementById("result").textContent=res;document.getElementById("preview").textContent="const fn = (a, b) => "+expr+"\nfn("+a+", "+b+") // → "+res;}<\/script></body></html>'></iframe>
+        </div>
+      </div>
+
+      <!-- QUIZ 3 -->
+      <div class="block b-quiz" id="quiz-2">
+        <div class="b-quiz-badge"><div class="b-quiz-badge-dot"></div> Quiz 3 · 2 punkty</div>
+        <div class="b-quiz-q">Który zapis jest poprawną arrow function z implicit return?</div>
+        <div class="b-quiz-opts">
+          <div class="b-quiz-opt" onclick="answerQuiz(2,'A',false,'quiz-2')"><div class="b-quiz-letter">A</div><div class="b-quiz-opt-text"><code>const f = (x) => { x * 2 }</code></div></div>
+          <div class="b-quiz-opt" onclick="answerQuiz(2,'B',true,'quiz-2','Bez nawiasów klamrowych { } arrow function automatycznie zwraca wartość wyrażenia. To właśnie implicit return.')">
+            <div class="b-quiz-letter">B</div><div class="b-quiz-opt-text"><code>const f = x => x * 2</code></div></div>
+          <div class="b-quiz-opt" onclick="answerQuiz(2,'C',false,'quiz-2')"><div class="b-quiz-letter">C</div><div class="b-quiz-opt-text"><code>const f = function => x * 2</code></div></div>
+          <div class="b-quiz-opt" onclick="answerQuiz(2,'D',false,'quiz-2')"><div class="b-quiz-letter">D</div><div class="b-quiz-opt-text"><code>const f = (x) { return x * 2 }</code></div></div>
+        </div>
+        <div class="b-quiz-feedback" id="fb-quiz-2"></div>
+        <div class="b-quiz-points" id="pts-quiz-2">⭐ 2 punkty za poprawną odpowiedź</div>
+      </div>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         ROZDZIAŁ 3 — DESTRUKTURYZACJA
+         ═══════════════════════════════════════════ -->
+    <section class="chapter-section" id="ch-3">
+
+      <div class="chapter-hero">
+        <div class="chapter-emoji-big">📦</div>
+        <div class="chapter-hero-text">
+          <div class="chapter-hero-badge">Moduł 2 · Rozdział 4</div>
+          <div class="chapter-title">Destrukturyzacja i Spread</div>
+          <div class="chapter-desc">Rozpakowuj obiekty i tablice w jednej linii. Template literals do eleganckich stringów. Spread operator dla niemutowalnych operacji — esencja nowoczesnego JS.</div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-code">
+          <div class="b-code-header">
+            <div class="b-code-dots"><div class="b-code-dot" style="background:#f87171"></div><div class="b-code-dot" style="background:#fbbf24"></div><div class="b-code-dot" style="background:#34d399"></div></div>
+            <span class="b-code-filename">destructuring.js</span>
+            <button class="b-code-copy" onclick="copyCode(this)">Kopiuj</button>
+          </div>
+          <pre><code><span class="cm">// ── Destrukturyzacja obiektów ──</span>
+<span class="kw">const</span> <span class="id">user</span> = { name: <span class="str">'Anna'</span>, age: <span class="num">28</span>, city: <span class="str">'Kraków'</span> }
+
+<span class="cm">// Stary sposób</span>
+<span class="kw">const</span> <span class="id">name</span> = <span class="id">user</span>.name
+<span class="kw">const</span> <span class="id">age</span> = <span class="id">user</span>.age
+
+<span class="cm">// Destrukturyzacja</span>
+<span class="kw">const</span> { <span class="id">name</span>, <span class="id">age</span>, <span class="id">city</span> = <span class="str">'Warszawa'</span> } = <span class="id">user</span>  <span class="cm">// default value</span>
+<span class="kw">const</span> { <span class="id">name</span>: <span class="id">userName</span> } = <span class="id">user</span>  <span class="cm">// rename</span>
+
+<span class="cm">// ── Destrukturyzacja tablic ──</span>
+<span class="kw">const</span> [<span class="id">first</span>, <span class="id">second</span>, ...<span class="id">rest</span>] = [<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>, <span class="num">40</span>]
+<span class="cm">// first=10, second=20, rest=[30,40]</span>
+
+<span class="cm">// ── Template Literals ──</span>
+<span class="kw">const</span> <span class="id">greeting</span> = <span class="str">`Cześć ${<span class="id">name</span>}! Masz ${<span class="id">age</span>} lat.`</span>
+<span class="kw">const</span> <span class="id">html</span> = <span class="str">`
+  &lt;div class="user"&gt;
+    &lt;h2&gt;${<span class="id">name</span>}&lt;/h2&gt;
+    &lt;p&gt;${<span class="id">age</span>} lat, ${<span class="id">city</span>}&lt;/p&gt;
+  &lt;/div&gt;
+`</span>
+
+<span class="cm">// ── Spread Operator ──</span>
+<span class="kw">const</span> <span class="id">a</span> = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+<span class="kw">const</span> <span class="id">b</span> = [...<span class="id">a</span>, <span class="num">4</span>, <span class="num">5</span>]  <span class="cm">// [1,2,3,4,5] — kopia!</span>
+
+<span class="kw">const</span> <span class="id">obj1</span> = { x: <span class="num">1</span>, y: <span class="num">2</span> }
+<span class="kw">const</span> <span class="id">obj2</span> = { ...<span class="id">obj1</span>, z: <span class="num">3</span> }  <span class="cm">// { x:1, y:2, z:3 }</span>
+<span class="kw">const</span> <span class="id">updated</span> = { ...<span class="id">obj1</span>, y: <span class="num">99</span> }  <span class="cm">// override y</span></code></pre>
+        </div>
+      </div>
+
+      <!-- Checklista nauki -->
+      <div class="block">
+        <div class="b-checklist" id="cl-3">
+          <div class="b-checklist-title">✅ Co umiem po tym rozdziale?</div>
+          <div class="b-cl-progress"><div class="b-cl-progress-fill" id="cl-3-bar" style="width:0%"></div></div>
+          <div class="b-check-item" onclick="toggleCheck(this,'cl-3')">
+            <div class="b-check-box"><span style="color:#060E1C;font-size:10px;font-weight:800">✓</span></div>
+            <div><div class="b-check-text">Destrukturyzuję obiekty jedną linią kodu</div><div class="b-check-code">const { name, age } = user</div></div>
+          </div>
+          <div class="b-check-item" onclick="toggleCheck(this,'cl-3')">
+            <div class="b-check-box"><span style="color:#060E1C;font-size:10px;font-weight:800">✓</span></div>
+            <div><div class="b-check-text">Używam default values w destrukturyzacji</div><div class="b-check-code">const { city = 'Warszawa' } = user</div></div>
+          </div>
+          <div class="b-check-item" onclick="toggleCheck(this,'cl-3')">
+            <div class="b-check-box"><span style="color:#060E1C;font-size:10px;font-weight:800">✓</span></div>
+            <div><div class="b-check-text">Piszę template literals z interpolacją</div><div class="b-check-code">`Cześć ${name}!`</div></div>
+          </div>
+          <div class="b-check-item" onclick="toggleCheck(this,'cl-3')">
+            <div class="b-check-box"><span style="color:#060E1C;font-size:10px;font-weight:800">✓</span></div>
+            <div><div class="b-check-text">Używam spread do niemutowalnych kopii</div><div class="b-check-code">const copy = [...arr, newItem]</div></div>
+          </div>
+          <div class="b-check-item" onclick="toggleCheck(this,'cl-3')">
+            <div class="b-check-box"><span style="color:#060E1C;font-size:10px;font-weight:800">✓</span></div>
+            <div><div class="b-check-text">Destrukturyzuję parametry funkcji</div><div class="b-check-code">function greet({ name, age }) { ... }</div></div>
+          </div>
+          <div class="b-check-done-count" id="cl-3-count">0 / 5 ukończonych</div>
+        </div>
+      </div>
+
+      <!-- QUIZ 4 -->
+      <div class="block b-quiz" id="quiz-3">
+        <div class="b-quiz-badge"><div class="b-quiz-badge-dot"></div> Quiz 4 · 3 punkty</div>
+        <div class="b-quiz-q">Co zwróci: <code>const [, second, ...rest] = [10, 20, 30, 40, 50]</code>?</div>
+        <div class="b-quiz-opts">
+          <div class="b-quiz-opt" onclick="answerQuiz(3,'A',false,'quiz-3')"><div class="b-quiz-letter">A</div><div class="b-quiz-opt-text">second = 10, rest = [20,30,40,50]</div></div>
+          <div class="b-quiz-opt" onclick="answerQuiz(3,'B',true,'quiz-3','Pierwsza pozycja jest pominięta (przecinek bez zmiennej), second = 20, rest = [30,40,50] — rest zbiera pozostałe elementy.')">
+            <div class="b-quiz-letter">B</div><div class="b-quiz-opt-text">second = 20, rest = [30, 40, 50]</div></div>
+          <div class="b-quiz-opt" onclick="answerQuiz(3,'C',false,'quiz-3')"><div class="b-quiz-letter">C</div><div class="b-quiz-opt-text">SyntaxError</div></div>
+          <div class="b-quiz-opt" onclick="answerQuiz(3,'D',false,'quiz-3')"><div class="b-quiz-letter">D</div><div class="b-quiz-opt-text">second = 20, rest = 30</div></div>
+        </div>
+        <div class="b-quiz-feedback" id="fb-quiz-3"></div>
+        <div class="b-quiz-points" id="pts-quiz-3">⭐ 3 punkty za poprawną odpowiedź</div>
+      </div>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         ROZDZIAŁ 4 — PROMISES I ASYNC/AWAIT
+         ═══════════════════════════════════════════ -->
+    <section class="chapter-section" id="ch-4">
+
+      <div class="chapter-hero">
+        <div class="chapter-emoji-big">🏆</div>
+        <div class="chapter-hero-text">
+          <div class="chapter-hero-badge">Moduł 2 · Rozdział 5 — Finał</div>
+          <div class="chapter-title">Promises i Async/Await</div>
+          <div class="chapter-desc">Asynchroniczny JavaScript bez callback hell. Promises dają kontrolę nad operacjami czasochłonnymi. Async/await sprawia że asynchroniczny kod wygląda synchronicznie.</div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-table-wrap">
+          <table class="b-table">
+            <thead><tr><th>Podejście</th><th>Składnia</th><th>Czytelność</th><th>Error handling</th></tr></thead>
+            <tbody>
+              <tr><td>Callbacks</td><td><code>doA(cb1)</code></td><td>❌ Callback hell</td><td>Skomplikowany</td></tr>
+              <tr><td>Promises</td><td><code>.then().catch()</code></td><td>🟡 Łańcuchy</td><td><code>.catch()</code></td></tr>
+              <tr><td>Async/Await</td><td><code>await fn()</code></td><td>✅ Jak sync</td><td><code>try/catch</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="b-code">
+          <div class="b-code-header">
+            <div class="b-code-dots"><div class="b-code-dot" style="background:#f87171"></div><div class="b-code-dot" style="background:#fbbf24"></div><div class="b-code-dot" style="background:#34d399"></div></div>
+            <span class="b-code-filename">async-await.js</span>
+            <button class="b-code-copy" onclick="copyCode(this)">Kopiuj</button>
+          </div>
+          <pre><code><span class="cm">// Promise — podstawy</span>
+<span class="kw">const</span> <span class="fn">fetchUser</span> = (<span class="id">id</span>) => <span class="kw">new</span> Promise((<span class="id">resolve</span>, <span class="id">reject</span>) => {
+  setTimeout(() => {
+    <span class="kw">if</span> (<span class="id">id</span> > <span class="num">0</span>) <span class="fn">resolve</span>({ id, name: <span class="str">'Anna'</span> })
+    <span class="kw">else</span> <span class="fn">reject</span>(<span class="kw">new</span> <span class="fn">Error</span>(<span class="str">'Invalid ID'</span>))
+  }, <span class="num">1000</span>)
+})
+
+<span class="cm">// Promise chain</span>
+<span class="fn">fetchUser</span>(<span class="num">1</span>)
+  .<span class="fn">then</span>(<span class="id">user</span> => { console.<span class="fn">log</span>(<span class="id">user</span>.name) })
+  .<span class="fn">catch</span>(<span class="id">err</span> => console.<span class="fn">error</span>(<span class="id">err</span>))
+
+<span class="cm">// Async/Await — znacznie czytelniejsze!</span>
+<span class="kw">async function</span> <span class="fn">getUser</span>() {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> <span class="id">user</span> = <span class="kw">await</span> <span class="fn">fetchUser</span>(<span class="num">1</span>)
+    console.<span class="fn">log</span>(<span class="id">user</span>.name)  <span class="cm">// 'Anna'</span>
+  } <span class="kw">catch</span> (<span class="id">err</span>) {
+    console.<span class="fn">error</span>(<span class="id">err</span>.message)
+  }
+}
+
+<span class="cm">// Parallel — Promise.all()</span>
+<span class="kw">const</span> [<span class="id">user</span>, <span class="id">posts</span>] = <span class="kw">await</span> Promise.<span class="fn">all</span>([
+  <span class="fn">fetchUser</span>(<span class="num">1</span>),
+  <span class="fn">fetchPosts</span>(<span class="num">1</span>)
+])
+<span class="cm">// Oba requesty w tym samym czasie!</span>
+
+<span class="cm">// Fetch API — realne użycie</span>
+<span class="kw">const</span> <span class="fn">getData</span> = <span class="kw">async</span> (<span class="id">url</span>) => {
+  <span class="kw">const</span> <span class="id">res</span> = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="id">url</span>)
+  <span class="kw">if</span> (!<span class="id">res</span>.ok) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">`HTTP ${<span class="id">res</span>.status}`</span>)
+  <span class="kw">return</span> <span class="id">res</span>.<span class="fn">json</span>()
+}</code></pre>
+        </div>
+      </div>
+
+      <!-- TOGGLE — dobre praktyki -->
+      <div class="block">
+        <div class="b-toggle" onclick="toggleBlock(this)">
+          <div class="b-toggle-header"><span class="b-toggle-arrow">▶</span>💡 Dobre praktyki async/await</div>
+          <div class="b-toggle-body"><div class="b-toggle-content">
+            <p>1. <strong>Zawsze używaj try/catch</strong> przy await — błędy z rejected Promise rzucają wyjątek.</p>
+            <p style="margin-top:8px">2. <strong>Promise.all() dla równoległych requestów</strong> — nie czekaj sekwencyjnie gdy możesz równolegle.</p>
+            <p style="margin-top:8px">3. <strong>Nie blokuj pętli</strong> — for...of z await działa sekwencyjnie. Użyj Promise.all(array.map(fn)).</p>
+            <pre>// ❌ Sekwencyjnie (wolno)
+for (const id of ids) await fetch(url+id)
+
+// ✅ Równolegle (szybko)
+await Promise.all(ids.map(id => fetch(url+id)))</pre>
+          </div></div>
+        </div>
+      </div>
+
+      <!-- FINALNE FISZKI -->
+      <div class="block b-flashcards" id="fc-4">
+        <div class="b-fc-badge">🃏 Finalne fiszki — Powtórka całego kursu<span class="b-fc-progress" id="fc-4-counter">1 / 6</span></div>
+        <div class="b-fc-wrap" onclick="flipFC(4)">
+          <div class="b-fc-card" id="fc-4-card">
+            <div class="b-fc-face b-fc-front">
+              <div class="b-fc-label">pytanie — kliknij by obrócić</div>
+              <div class="b-fc-text" id="fc-4-front">Co to jest Promise i jakie ma stany?</div>
+            </div>
+            <div class="b-fc-face b-fc-back">
+              <div class="b-fc-label">odpowiedź</div>
+              <div class="b-fc-text" id="fc-4-back">Promise to obiekt reprezentujący przyszłą wartość. Stany: <strong>pending</strong> (oczekiwanie), <strong>fulfilled</strong> (sukces), <strong>rejected</strong> (błąd).</div>
+            </div>
+          </div>
+        </div>
+        <div class="b-fc-nav">
+          <button class="b-fc-btn" onclick="prevFC(4)">← Poprzednia</button>
+          <button class="b-fc-btn" onclick="nextFC(4)">Następna →</button>
+        </div>
+      </div>
+
+      <!-- FINAŁOWY QUIZ -->
+      <div class="block b-quiz" id="quiz-4">
+        <div class="b-quiz-badge"><div class="b-quiz-badge-dot"></div> Finałowy Quiz · 5 punktów</div>
+        <div class="b-quiz-q">Jaki będzie wynik?
+          <div class="b-quiz-opt-code" style="margin-top:10px">async function test() { return 42 }<br>test().then(v => console.log(v))</div>
+        </div>
+        <div class="b-quiz-opts">
+          <div class="b-quiz-opt" onclick="answerQuiz(4,'A',false,'quiz-4')"><div class="b-quiz-letter">A</div><div class="b-quiz-opt-text">SyntaxError — async function musi używać await</div></div>
+          <div class="b-quiz-opt" onclick="answerQuiz(4,'B',false,'quiz-4')"><div class="b-quiz-letter">B</div><div class="b-quiz-opt-text">undefined</div></div>
+          <div class="b-quiz-opt" onclick="answerQuiz(4,'C',true,'quiz-4','Async function automatycznie zwraca Promise. return 42 jest odpowiednikiem Promise.resolve(42). Możemy więc .then() na jej wyniku.')">
+            <div class="b-quiz-letter">C</div><div class="b-quiz-opt-text">42 — wypisane w konsoli</div></div>
+          <div class="b-quiz-opt" onclick="answerQuiz(4,'D',false,'quiz-4')"><div class="b-quiz-letter">D</div><div class="b-quiz-opt-text">Promise { 42 }</div></div>
+        </div>
+        <div class="b-quiz-feedback" id="fb-quiz-4"></div>
+        <div class="b-quiz-points" id="pts-quiz-4">⭐ 5 punktów za poprawną odpowiedź</div>
+      </div>
+
+      <div class="block">
+        <div class="b-callout success">
+          <div class="b-callout-icon">🎉</div>
+          <div class="b-callout-body">
+            <div class="b-callout-title">Gratulacje — ukończyłeś kurs JavaScript ES6+!</div>
+            <div class="b-callout-text">Znasz teraz let/const, arrow functions, destrukturyzację, template literals, spread operator oraz async/await. To fundament każdego nowoczesnego projektu JavaScript.</div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    </div><!-- content-wrap -->
+  </div><!-- content-scroll -->
+
+  <!-- NAV BAR -->
+  <div class="navbar">
+    <button class="nav-btn" id="btn-prev" onclick="navigate(-1)" disabled>← Poprzedni</button>
+    <div class="nav-center">
+      <div class="nav-dots" id="nav-dots"></div>
+      <div class="nav-label" id="nav-label">Rozdział 1 z 5</div>
+    </div>
+    <button class="nav-btn next" id="btn-next" onclick="navigate(1)">Następny →</button>
+  </div>
+
+</div><!-- main -->
+</div><!-- app -->
+
+<!-- CERTIFICATE MODAL -->
+<div class="modal-overlay" id="cert-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeCert()">✕</button>
+    <div class="cert-content">
+      <div class="cert-badge">🏆</div>
+      <div class="cert-title">Certyfikat ukończenia</div>
+      <div class="cert-subtitle">Z przyjemnością potwierdzamy ukończenie kursu<br><strong>JavaScript ES6+ — Kompletny Kurs</strong></div>
+      <div class="cert-card">
+        <div class="cert-name">Jan Kowalski</div>
+        <div class="cert-course">JavaScript ES6+ — Kompletny Kurs</div>
+        <div class="cert-date" id="cert-date">Wystawiono: —</div>
+        <div style="margin-top:10px"><div class="cert-code" id="cert-code">WB-2024-XXXXXX</div></div>
+      </div>
+      <div class="cert-actions">
+        <button class="btn-primary" onclick="downloadCert()">📄 Pobierz PDF</button>
+        <button class="btn-ghost" onclick="closeCert()">Zamknij</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// WEBOOK RUNTIME ENGINE
+// ══════════════════════════════════════════════════════
+
+const CHAPTERS = [
+  { emoji: '🚀', title: 'Wstęp i Setup' },
+  { emoji: '🔤', title: 'let, const i Scope' },
+  { emoji: '➡️', title: 'Arrow Functions' },
+  { emoji: '📦', title: 'Destrukturyzacja i Spread' },
+  { emoji: '🏆', title: 'Promises i Async/Await' },
+]
+
+let current = 0
+const done = new Set()
+let totalScore = 0
+const quizAnswered = new Set()
+
+// ── Navigation ──────────────────────────────────────
+function goTo(idx) {
+  if (idx < 0 || idx >= CHAPTERS.length) return
+  document.querySelectorAll('.chapter-section').forEach((el, i) => {
+    el.classList.toggle('visible', i === idx)
+  })
+  document.querySelectorAll('.toc-btn').forEach((el, i) => {
+    el.classList.toggle('active', i === idx)
+    if (done.has(i)) el.classList.add('done')
+  })
+  const ch = CHAPTERS[idx]
+  document.getElementById('topbar-emoji').textContent = ch.emoji
+  document.getElementById('topbar-title').textContent = ch.title
+  document.getElementById('topbar-num').textContent = String(idx + 1).padStart(2,'0') + ' / ' + String(CHAPTERS.length).padStart(2,'0')
+  document.getElementById('btn-prev').disabled = idx === 0
+  const nextBtn = document.getElementById('btn-next')
+  if (idx === CHAPTERS.length - 1) {
+    nextBtn.textContent = '🏆 Ukończ kurs'
+    nextBtn.className = 'nav-btn finish'
+  } else {
+    nextBtn.textContent = 'Następny →'
+    nextBtn.className = 'nav-btn next'
+  }
+  done.add(current)
+  current = idx
+  updateProgress()
+  renderDots()
+  document.querySelector('.content-scroll').scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function navigate(dir) {
+  if (dir === 1 && current === CHAPTERS.length - 1) {
+    showCertificate(); return
+  }
+  goTo(current + dir)
+}
+
+// ── Progress ────────────────────────────────────────
+function updateProgress() {
+  const pct = Math.round((done.size / CHAPTERS.length) * 100)
+  document.getElementById('pbar').style.width = pct + '%'
+  document.getElementById('pct-label').textContent = pct + '%'
+  document.getElementById('stat-done').textContent = done.size
+  document.getElementById('stat-score').textContent = totalScore
+}
+
+function renderDots() {
+  const container = document.getElementById('nav-dots')
+  container.innerHTML = CHAPTERS.map((_, i) => {
+    const cls = i === current ? 'active' : done.has(i) ? 'done' : 'inactive'
+    return '<div class="nav-dot ' + cls + '"></div>'
+  }).join('')
+  document.getElementById('nav-label').textContent = 'Rozdział ' + (current + 1) + ' z ' + CHAPTERS.length
+}
+
+// ── Quiz ────────────────────────────────────────────
+const QUIZ_POINTS = [1, 2, 2, 3, 5]
+
+function answerQuiz(quizIdx, letter, isCorrect, quizId, explanation) {
+  if (quizAnswered.has(quizIdx)) return
+  quizAnswered.add(quizIdx)
+
+  const quiz = document.getElementById(quizId)
+  quiz.querySelectorAll('.b-quiz-opt').forEach(opt => {
+    opt.classList.add('disabled')
+    if (opt.getAttribute('onclick') && opt.getAttribute('onclick').includes("'" + letter + "'")) {
+      opt.classList.add(isCorrect ? 'correct' : 'wrong')
+    }
+    // Mark correct answer green
+    if (opt.getAttribute('onclick') && opt.getAttribute('onclick').includes(',true,')) {
+      opt.classList.add('correct')
+    }
+  })
+
+  const fb = document.getElementById('fb-' + quizId)
+  fb.className = 'b-quiz-feedback show ' + (isCorrect ? 'ok' : 'bad')
+  if (isCorrect) {
+    const pts = QUIZ_POINTS[quizIdx] || 1
+    totalScore += pts
+    fb.innerHTML = '✅ Poprawnie! +' + pts + ' pkt' + (explanation ? '<div class="b-quiz-explanation">' + explanation + '</div>' : '')
+    document.getElementById('pts-' + quizId).innerHTML = '✅ Zdobyto ' + pts + ' punktów!'
+  } else {
+    fb.innerHTML = '❌ Błędna odpowiedź.' + (explanation ? '<div class="b-quiz-explanation">' + explanation + '</div>' : '')
+  }
+  updateProgress()
+}
+
+// ── Flashcards ──────────────────────────────────────
+const FC_DATA = {
+  1: [
+    { front: 'Czym różni się <code>const</code> od <code>let</code>?', back: '<code>const</code> blokuje reassignment referencji, <code>let</code> pozwala na zmianę. Obydwa mają block scope.' },
+    { front: 'Czym jest block scope?', back: 'Zmienna istnieje tylko w bloku <code>{ }</code> gdzie jest zadeklarowana. <code>let</code> i <code>const</code> są block-scoped, <code>var</code> jest function-scoped.' },
+    { front: 'Co to Temporal Dead Zone?', back: 'Strefa od początku bloku do deklaracji <code>let</code>/<code>const</code>. Dostęp do zmiennej rzuca <code>ReferenceError</code>.' },
+    { front: 'Kiedy użyć <code>const</code>, a kiedy <code>let</code>?', back: 'Domyślnie używaj <code>const</code>. Użyj <code>let</code> tylko gdy musisz zmienić referencję zmiennej.' },
+    { front: 'Czy <code>const</code> robi obiekty niemutowalnymi?', back: 'Nie! <code>const</code> blokuje tylko reassignment. Możesz modyfikować właściwości obiektu i elementy tablicy.' },
+  ],
+  4: [
+    { front: 'Co to jest Promise i jakie ma stany?', back: 'Promise to obiekt reprezentujący przyszłą wartość. Stany: <strong>pending</strong>, <strong>fulfilled</strong>, <strong>rejected</strong>.' },
+    { front: 'Co robi <code>async</code> przy funkcji?', back: 'Sprawia że funkcja zawsze zwraca Promise. <code>return 42</code> = <code>Promise.resolve(42)</code>.' },
+    { front: 'Co robi <code>await</code>?', back: '<code>await</code> wstrzymuje wykonanie funkcji async i czeka na rozwiązanie Promise. Można go używać tylko w funkcjach async.' },
+    { front: 'Jak obsłużyć błąd w async/await?', back: 'Użyj <code>try { await fn() } catch(err) { ... }</code>. Rejected Promise rzuca wyjątek który łapie catch.' },
+    { front: 'Czym jest Promise.all()?', back: '<code>Promise.all([p1,p2])</code> uruchamia wszystkie Promise równolegle i czeka na wszystkie. Jeśli jeden się nie powiedzie, rzuca błąd.' },
+    { front: 'Różnica Promise.all() vs Promise.allSettled()?', back: '<code>Promise.all()</code> — failuje gdy jeden się nie powiedzie. <code>Promise.allSettled()</code> — czeka na wszystkie bez względu na wynik.' },
+  ]
+}
+
+const fcState = {}
+
+function flipFC(id) {
+  if (!fcState[id]) fcState[id] = { idx: 0, flipped: false }
+  fcState[id].flipped = !fcState[id].flipped
+  document.getElementById('fc-' + id + '-card').classList.toggle('flipped', fcState[id].flipped)
+}
+
+function nextFC(id) {
+  if (!fcState[id]) fcState[id] = { idx: 0, flipped: false }
+  const data = FC_DATA[id]
+  fcState[id].idx = (fcState[id].idx + 1) % data.length
+  fcState[id].flipped = false
+  updateFC(id)
+}
+
+function prevFC(id) {
+  if (!fcState[id]) fcState[id] = { idx: 0, flipped: false }
+  const data = FC_DATA[id]
+  fcState[id].idx = (fcState[id].idx - 1 + data.length) % data.length
+  fcState[id].flipped = false
+  updateFC(id)
+}
+
+function updateFC(id) {
+  const data = FC_DATA[id]
+  const state = fcState[id]
+  const card = FC_DATA[id][state.idx]
+  document.getElementById('fc-' + id + '-card').classList.remove('flipped')
+  document.getElementById('fc-' + id + '-front').innerHTML = card.front
+  document.getElementById('fc-' + id + '-back').innerHTML = card.back
+  document.getElementById('fc-' + id + '-counter').textContent = (state.idx + 1) + ' / ' + data.length
+}
+
+// ── Checklist ───────────────────────────────────────
+function toggleCheck(item, containerId) {
+  item.classList.toggle('done')
+  const container = document.getElementById(containerId)
+  const items = container.querySelectorAll('.b-check-item')
+  const doneCount = container.querySelectorAll('.b-check-item.done').length
+  const bar = document.getElementById(containerId + '-bar')
+  const count = document.getElementById(containerId + '-count')
+  if (bar) bar.style.width = (doneCount / items.length * 100) + '%'
+  if (count) count.textContent = doneCount + ' / ' + items.length + ' ukończonych'
+}
+
+// ── Toggle ──────────────────────────────────────────
+function toggleBlock(el) { el.classList.toggle('open') }
+
+// ── Code copy ───────────────────────────────────────
+function copyCode(btn) {
+  const pre = btn.closest('.b-code').querySelector('pre')
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Skopiowano!'
+    setTimeout(() => btn.textContent = 'Kopiuj', 2000)
+  })
+}
+
+// ── Certificate ─────────────────────────────────────
+function showCertificate() {
+  done.add(current)
+  updateProgress()
+  const code = 'WB-' + new Date().getFullYear() + '-' + Math.random().toString(36).substr(2,6).toUpperCase()
+  const date = new Date().toLocaleDateString('pl-PL', { year:'numeric', month:'long', day:'numeric' })
+  document.getElementById('cert-code').textContent = code
+  document.getElementById('cert-date').textContent = 'Wystawiono: ' + date
+  document.getElementById('cert-modal').classList.add('open')
+}
+
+function closeCert() {
+  document.getElementById('cert-modal').classList.remove('open')
+}
+
+function downloadCert() {
+  alert('W produkcji: generowanie certyfikatu PDF przez serwer.\nTwój kod: ' + document.getElementById('cert-code').textContent)
+}
+
+// ── Init ────────────────────────────────────────────
+renderDots()
+goTo(0)
+</script>
+</body>
+</html>

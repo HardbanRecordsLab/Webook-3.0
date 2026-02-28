@@ -4,7 +4,8 @@ import { z } from 'zod'
 import { db } from '../lib/db'
 
 const router = Router()
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-02-24.acacia' as any })
+const stripeKey = process.env.STRIPE_SECRET_KEY
+const stripe = stripeKey ? new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' as any }) : null
 
 const CheckoutSchema = z.object({
   webookId: z.string().uuid(),
@@ -14,6 +15,9 @@ const CheckoutSchema = z.object({
 
 router.post('/create-checkout', async (req: Request, res: Response) => {
   try {
+    if (!stripe) {
+      return res.status(503).json({ error: 'Payments are disabled: missing STRIPE_SECRET_KEY' })
+    }
     const { webookId, userId, webookTitle } = CheckoutSchema.parse(req.body)
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'blik', 'p24'],
@@ -50,6 +54,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
   const sig = req.headers['stripe-signature'] as string
   let event: Stripe.Event
   try {
+    if (!stripe) return res.status(503).send('Payments disabled')
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
   } catch {
     return res.status(400).send('Webhook Error')

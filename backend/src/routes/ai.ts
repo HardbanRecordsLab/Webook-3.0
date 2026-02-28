@@ -32,11 +32,11 @@ async function callGroq(system: string, user: string, maxTokens: number) {
 }
 
 async function callOllama(system: string, user: string, maxTokens: number) {
-  const r = await fetch(`${OLLAMA_HOST}/api/chat`, {
+  const payload = (model: string) => ({
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: OLLAMA_MODEL,
+      model,
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: user },
@@ -49,9 +49,17 @@ async function callOllama(system: string, user: string, maxTokens: number) {
       },
     }),
   })
-  if (!r.ok) throw new Error(`OLLAMA ${r.status}`)
-  const data: any = await r.json()
-  return data?.message?.content || ''
+  const tryModel = async (model: string) => {
+    const r = await fetch(`${OLLAMA_HOST}/api/chat`, payload(model))
+    if (!r.ok) throw new Error(`OLLAMA ${r.status}`)
+    const data: any = await r.json()
+    return data?.message?.content || ''
+  }
+  try {
+    return await tryModel(OLLAMA_MODEL)
+  } catch {
+    return await tryModel('llama3.2:3b')
+  }
 }
 
 async function callAI(system: string, user: string, maxTokens: number) {

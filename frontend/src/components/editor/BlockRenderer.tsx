@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronRight, Plus, Trash2, Star, GripVertical } from 'lucide-react'
-import type { Block, QuizOption } from '../lib/blocks'
-import { uid } from '../lib/blocks'
+import type { Block, QuizOption } from '../../lib/blocks'
+import { uid } from '../../lib/blocks'
 
 interface BlockRendererProps {
   block: Block

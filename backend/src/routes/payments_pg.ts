@@ -1,12 +1,11 @@
 import { Router, Request, Response } from 'express'
 import Stripe from 'stripe'
 import { z } from 'zod'
-import { supabase } from '../lib/supabase'
+import { db } from '../lib/db'
 
 const router = Router()
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-02-24.acacia' as any })
 
-// ── POST /api/payments/create-checkout ───────────────────
 const CheckoutSchema = z.object({
   webookId: z.string().uuid(),
   userId: z.string().uuid(),
@@ -16,7 +15,6 @@ const CheckoutSchema = z.object({
 router.post('/create-checkout', async (req: Request, res: Response) => {
   try {
     const { webookId, userId, webookTitle } = CheckoutSchema.parse(req.body)
-
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'blik', 'p24'],
       line_items: [{
@@ -27,7 +25,7 @@ router.post('/create-checkout', async (req: Request, res: Response) => {
             description: 'Jednorazowy dostęp do Webook Studio',
             images: ['https://webook.studio/og.png'],
           },
-          unit_amount: 2500, // $25.00
+          unit_amount: 2500,
         },
         quantity: 1,
       }],
@@ -36,76 +34,59 @@ router.post('/create-checkout', async (req: Request, res: Response) => {
       cancel_url: `${process.env.FRONTEND_URL}/dashboard`,
       metadata: { webookId, userId },
     })
-
-    // Insert pending purchase
-    await supabase.from('purchases').insert({
-      webook_id: webookId,
-      user_id: userId,
-      stripe_session_id: session.id,
-      amount: 25,
-      status: 'pending',
-    })
-
+    await db.query(
+      `INSERT INTO purchases (webook_id, user_id, stripe_session_id, amount, status)
+       VALUES ($1,$2,$3,$4,$5)`,
+      [webookId, userId, session.id, 25, 'pending']
+    )
     res.json({ url: session.url, sessionId: session.id })
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors })
-    console.error('create-checkout error:', err)
     res.status(500).json({ error: 'Błąd tworzenia sesji płatności' })
   }
 })
 
-// ── POST /api/payments/webhook ────────────────────────────
 router.post('/webhook', async (req: Request, res: Response) => {
   const sig = req.headers['stripe-signature'] as string
   let event: Stripe.Event
-
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err)
+  } catch {
     return res.status(400).send('Webhook Error')
   }
-
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const { webookId } = session.metadata!
-
-    // Update purchase status
-    await supabase.from('purchases')
-      .update({ status: 'completed', completed_at: new Date().toISOString() })
-      .eq('stripe_session_id', session.id)
-
-    // Publish the webook
-    await supabase.from('webooks')
-      .update({ is_published: true, published_at: new Date().toISOString() })
-      .eq('id', webookId)
-
-    console.log(`✅ Webook ${webookId} published after payment ${session.id}`)
+    await db.query(
+      `UPDATE purchases SET status='completed', completed_at=NOW() WHERE stripe_session_id=$1`,
+      [session.id]
+    )
+    await db.query(
+      `UPDATE webooks SET is_published=true, published_at=NOW() WHERE id=$1`,
+      [webookId]
+    )
   }
-
   if (event.type === 'charge.refunded') {
     const charge = event.data.object as Stripe.Charge
-    await supabase.from('purchases')
-      .update({ status: 'refunded' })
-      .eq('stripe_session_id', charge.payment_intent as string)
+    await db.query(
+      `UPDATE purchases SET status='refunded' WHERE stripe_session_id=$1`,
+      [charge.payment_intent as string]
+    )
   }
-
   res.json({ received: true })
 })
 
-// ── GET /api/payments/verify ──────────────────────────────
 router.get('/verify', async (req: Request, res: Response) => {
   const { session_id } = req.query
   if (!session_id || typeof session_id !== 'string') {
     return res.status(400).json({ error: 'Missing session_id' })
   }
-
-  const { data } = await supabase.from('purchases')
-    .select('status, webook_id')
-    .eq('stripe_session_id', session_id)
-    .single()
-
-  res.json({ status: data?.status || 'not_found', webookId: data?.webook_id })
+  const r = await db.query(
+    `SELECT status, webook_id FROM purchases WHERE stripe_session_id=$1 LIMIT 1`,
+    [session_id]
+  )
+  const row = r.rows[0]
+  res.json({ status: row?.status || 'not_found', webookId: row?.webook_id })
 })
 
 export default router

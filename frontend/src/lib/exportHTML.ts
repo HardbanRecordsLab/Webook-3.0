@@ -1,5 +1,4 @@
-import type { Chapter, WebookMeta } from '../../lib/blocks'
-import type { QuizOption } from '../../lib/blocks'
+import type { Chapter, WebookMeta, QuizOption } from './blocks'
 
 // ═══════════════════════════════════════════════════════════
 // WEBOOK HTML EXPORT ENGINE

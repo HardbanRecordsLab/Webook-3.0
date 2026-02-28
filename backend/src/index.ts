@@ -5,9 +5,9 @@ import helmet from 'helmet'
 import { rateLimit } from 'express-rate-limit'
 
 import aiRouter from './routes/ai'
-import paymentsRouter from './routes/payments'
-import webooksRouter from './routes/webooks'
-import analyticsRouter from './routes/analytics'
+import paymentsRouter from './routes/payments_pg'
+import webooksRouter from './routes/webooks_pg'
+import analyticsRouter from './routes/analytics_pg'
 
 const app = express()
 const PORT = Number(process.env.PORT) || 3001

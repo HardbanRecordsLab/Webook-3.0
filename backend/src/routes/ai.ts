@@ -42,7 +42,11 @@ async function callOllama(system: string, user: string, maxTokens: number) {
         { role: 'user', content: user },
       ],
       stream: false,
-      options: { num_predict: maxTokens },
+      keep_alive: process.env.OLLAMA_KEEP_ALIVE || '30s',
+      options: {
+        num_predict: maxTokens,
+        num_ctx: parseInt(process.env.OLLAMA_NUM_CTX || '1024', 10),
+      },
     }),
   })
   if (!r.ok) throw new Error(`OLLAMA ${r.status}`)

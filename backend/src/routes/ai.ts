@@ -107,7 +107,8 @@ router.post('/generate-content', async (req, res) => {
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/)
         if (jsonMatch) result = JSON.parse(jsonMatch[0])
-      } catch {
+      } catch (e) {
+        console.error('Failed to parse JSON result:', e)
         result = text
       }
     }

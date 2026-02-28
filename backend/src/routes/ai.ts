@@ -4,9 +4,7 @@ import { z } from 'zod'
 const router = Router()
 const AI_PROVIDER = (process.env.AI_PROVIDER || 'groq').toLowerCase()
 const GROQ_API_KEY = process.env.GROQ_API_KEY
-const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://localhost:11434'
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.1:8b'
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
 
@@ -31,42 +29,6 @@ async function callGroq(system: string, user: string, maxTokens: number) {
   if (!r.ok) throw new Error(`GROQ ${r.status}`)
   const data: any = await r.json()
   return data?.choices?.[0]?.message?.content || ''
-}
-
-async function callOllama(system: string, user: string, maxTokens: number) {
-  const payload = (model: string) => ({
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-      stream: false,
-      keep_alive: process.env.OLLAMA_KEEP_ALIVE || '30s',
-      options: {
-        num_predict: maxTokens,
-        num_ctx: parseInt(process.env.OLLAMA_NUM_CTX || '1024', 10),
-      },
-    }),
-  })
-  const tryModel = async (model: string) => {
-    const r = await fetch(`${OLLAMA_HOST}/api/chat`, payload(model))
-    if (!r.ok) throw new Error(`OLLAMA ${r.status}`)
-    const data: any = await r.json()
-    return data?.message?.content || ''
-  }
-  try {
-    return await tryModel(OLLAMA_MODEL)
-  } catch {
-    return await tryModel('llama3.2:3b')
-  }
-}
-
-async function callAI(system: string, user: string, maxTokens: number) {
-  if (AI_PROVIDER === 'ollama') return callOllama(system, user, maxTokens)
-  return callGroq(system, user, maxTokens)
 }
 
 async function callGemini(system: string, user: string, maxTokens: number) {
@@ -95,10 +57,23 @@ async function callGemini(system: string, user: string, maxTokens: number) {
 }
 
 async function callAIDispatch(system: string, user: string, maxTokens: number) {
-  if (AI_PROVIDER === 'ollama') return callOllama(system, user, maxTokens)
   if (AI_PROVIDER === 'gemini') return callGemini(system, user, maxTokens)
   return callGroq(system, user, maxTokens)
 }
+
+router.get('/debug', (req, res) => {
+  res.json({
+    provider: AI_PROVIDER,
+    groq: {
+      model: GROQ_MODEL,
+      hasKey: !!GROQ_API_KEY
+    },
+    gemini: {
+      model: GEMINI_MODEL,
+      hasKey: !!GEMINI_API_KEY
+    }
+  })
+})
 
 // ── /api/ai/generate-content ──────────────────────────────
 const ContentSchema = z.object({

@@ -7,6 +7,8 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://localhost:11434'
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.1:8b'
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
 
 async function callGroq(system: string, user: string, maxTokens: number) {
   if (!GROQ_API_KEY) throw new Error('Missing GROQ_API_KEY')
@@ -67,6 +69,37 @@ async function callAI(system: string, user: string, maxTokens: number) {
   return callGroq(system, user, maxTokens)
 }
 
+async function callGemini(system: string, user: string, maxTokens: number) {
+  if (!GEMINI_API_KEY) throw new Error('Missing GEMINI_API_KEY')
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${GEMINI_API_KEY}`
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: `${system}\n\n${user}` }],
+        },
+      ],
+      generationConfig: {
+        maxOutputTokens: maxTokens,
+        temperature: 0.4,
+      },
+    }),
+  })
+  if (!r.ok) throw new Error(`GEMINI ${r.status}`)
+  const data: any = await r.json()
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  return text
+}
+
+async function callAIDispatch(system: string, user: string, maxTokens: number) {
+  if (AI_PROVIDER === 'ollama') return callOllama(system, user, maxTokens)
+  if (AI_PROVIDER === 'gemini') return callGemini(system, user, maxTokens)
+  return callGroq(system, user, maxTokens)
+}
+
 // ── /api/ai/generate-content ──────────────────────────────
 const ContentSchema = z.object({
   type: z.enum(['text', 'heading', 'callout', 'quiz', 'checklist']),
@@ -92,7 +125,7 @@ router.post('/generate-content', async (req, res) => {
       ? `Kontekst Webooka: ${body.context}\n\nZadanie: ${body.prompt}`
       : body.prompt
 
-    const text = await callAI(systemPrompt, userPrompt, 800)
+    const text = await callAIDispatch(systemPrompt, userPrompt, 800)
     let result: unknown = text
 
     if (body.type === 'quiz' || body.type === 'checklist') {
@@ -143,7 +176,7 @@ router.post('/generate-interactive', async (req, res) => {
     const user = body.context
       ? `Kontekst Webooka: ${body.context}\n\nStwórz narzędzie: ${body.prompt}`
       : `Stwórz narzędzie: ${body.prompt}`
-    let html = await callAI(INTERACTIVE_SYSTEM, user, 4000)
+    let html = await callAIDispatch(INTERACTIVE_SYSTEM, user, 4000)
 
     // Strip markdown code blocks if present
     html = html.replace(/^```html?\n?/m, '').replace(/\n?```$/m, '').trim()
@@ -173,7 +206,7 @@ router.post('/translate', async (req, res) => {
     const { blocks, targetLanguage } = TranslateSchema.parse(req.body)
     const textBlocks = blocks.filter(b => ['text','heading','callout'].includes(b.type) && b.content.trim())
 
-    const text = await callAI(
+    const text = await callAIDispatch(
       `Jesteś tłumaczem. Tłumacz treści Webooków edukacyjnych na ${LANG_NAMES[targetLanguage]}. Zachowaj formatowanie i emoji. Zwróć JSON: [{\"id\":\"...\",\"content\":\"...\"}]`,
       `Przetłumacz te bloki:\n${JSON.stringify(textBlocks.map(b => ({ id: b.id, content: b.content })))}`,
       4000
@@ -198,7 +231,7 @@ router.post('/proofread', async (req, res) => {
   try {
     const { content } = ProofreadSchema.parse(req.body)
 
-    const text = await callAI(
+    const text = await callAIDispatch(
       'Jesteś korektorem polskich tekstów edukacyjnych. Popraw błędy językowe, stylistyczne i interpunkcyjne. Zwróć JSON: {\"corrected\":\"...\",\"changes\":[{\"original\":\"...\",\"fixed\":\"...\",\"reason\":\"...\"}]}',
       `Popraw tekst:\n\n${content}`,
       2000

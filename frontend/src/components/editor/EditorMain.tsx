@@ -15,6 +15,12 @@ import AIStudio from './AIStudio'
 import WorksheetBuilder from './WorksheetBuilder'
 import AppBuilder from './AppBuilder'
 import AudioNarrator from './AudioNarrator'
+import ChapterSidebar from './ChapterSidebar'
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core"
+import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable"
 import { createBlock, BLOCK_META, uid } from '../../lib/blocks'
 import type { Block, Chapter, BlockType, WebookMeta } from '../../lib/blocks'
 import { exportToHTML } from '../../lib/exportHTML'
@@ -101,6 +107,83 @@ const QUICK_BLOCKS: { type: BlockType; icon: string; color: string }[] = [
   { type: 'divider',          icon: '---',color: '#4b5563' },
 ]
 
+import { useSortable } from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+
+// ── BLOCK ITEM COMPONENT ──────────────────────────────────────
+interface BlockItemProps {
+  block: Block;
+  bm: any;
+  isSelected: boolean;
+  setSelectedBlock: (id: string) => void;
+  moveBlock: (id: string, dir: -1 | 1) => void;
+  duplicateBlock: (id: string) => void;
+  removeBlock: (id: string) => void;
+  updateBlock: (id: string, content: string, props?: Record<string, unknown>) => void;
+  setShowPicker: (show: boolean) => void;
+}
+
+function BlockItem({ 
+  block, bm, isSelected, setSelectedBlock, moveBlock, duplicateBlock, removeBlock, updateBlock, setShowPicker 
+}: BlockItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.97, x: -10 }}
+      transition={{ duration: 0.15 }}
+      className={"relative group/block mb-3 rounded-2xl transition-all duration-150 " + (isSelected ? 'ring-1 ring-brand-blue/40' : '')}
+      onClick={() => setSelectedBlock(block.id)}
+    >
+      <div className="absolute -top-2.5 left-3 z-20 opacity-0 group-hover/block:opacity-100 transition-opacity pointer-events-none">
+        <span className="text-[9px] font-mono px-2 py-0.5 rounded-md bg-surface-0 border border-white/[0.08]" style={{ color: bm?.color }}>
+          {bm?.icon} {bm?.label}
+        </span>
+      </div>
+      <div className="absolute right-2 top-2 z-20 flex gap-1 opacity-0 group-hover/block:opacity-100 transition-opacity">
+        <button onClick={e => { e.stopPropagation(); moveBlock(block.id, -1) }} className="block-action-btn"><ChevronUp size={11} /></button>
+        <button onClick={e => { e.stopPropagation(); moveBlock(block.id, 1) }} className="block-action-btn"><ChevronDown size={11} /></button>
+        <button onClick={e => { e.stopPropagation(); duplicateBlock(block.id) }} className="block-action-btn" title="Duplikuj">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+        </button>
+        <button onClick={e => { e.stopPropagation(); removeBlock(block.id) }} className="block-action-btn hover:bg-red-500/20 hover:text-red-400"><Trash2 size={11} /></button>
+      </div>
+      <div {...listeners} className="absolute left-1 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover/block:opacity-100 transition-opacity cursor-grab text-ink-3">
+        <GripVertical size={12} />
+      </div>
+      <div className={['h1', 'h2', 'h3', 'paragraph', 'quote'].includes(block.type) ? 'px-6 py-3' : ''}>
+        <BlockRenderer block={block} onChange={updateBlock} isSelected={isSelected} />
+      </div>
+      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover/block:opacity-100 transition-opacity">
+        <button onClick={e => { e.stopPropagation(); setShowPicker(true) }}
+          className="w-6 h-6 rounded-full bg-surface-4 border border-white/[0.1] flex items-center justify-center text-ink-3 hover:text-brand-blue hover:border-brand-blue/30 hover:bg-brand-blue/10 transition-all shadow-sm">
+          <Plus size={11} />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function EditorMain() {
   const [meta, setMeta] = useState<WebookMeta>(DEFAULT_META)
   const [chapters, setChapters] = useState<Chapter[]>(makeChapters)
@@ -120,6 +203,11 @@ export default function EditorMain() {
   const [hist, setHist] = useState<Chapter[][]>(() => [makeChapters()])
   const [histIdx, setHistIdx] = useState(0)
   const canvasRef = useRef<HTMLDivElement>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor)
+  )
 
   const cur = chapters[activeChapter] ?? chapters[0]
   const totalBlocks = chapters.reduce((acc, ch) => acc + ch.blocks.length, 0)
@@ -160,6 +248,15 @@ export default function EditorMain() {
     setSelectedBlock(block.id)
     setTimeout(() => canvasRef.current?.scrollTo({ top: 9999, behavior: 'smooth' }), 80)
   }
+
+  const insertBlocks = useCallback((newBlocks: Block[]) => {
+    setChapters(prev => {
+      const next = prev.map((ch, i) => i !== activeChapter ? ch : { ...ch, blocks: [...ch.blocks, ...newBlocks] })
+      push(next); return next
+    })
+    if (newBlocks.length > 0) setSelectedBlock(newBlocks[0].id)
+    setTimeout(() => canvasRef.current?.scrollTo({ top: 9999, behavior: 'smooth' }), 100)
+  }, [activeChapter])
 
   function removeBlock(id: string) {
     setChapters(prev => {
@@ -210,8 +307,29 @@ export default function EditorMain() {
     setChapters(prev => {
       const next = prev.filter(ch => ch.id !== id)
       if (activeChapter >= next.length) setActiveChapter(next.length - 1)
-      return next
+      push(next); return next
     })
+  }
+
+  function handleReorderBlocks(reordered: Block[]) {
+    setChapters(prev => {
+      const next = prev.map((ch, ci) => ci === activeChapter ? { ...ch, blocks: reordered } : ch)
+      push(next); return next
+    })
+  }
+
+  function handleDragEndBlocks(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIdx = cur.blocks.findIndex(b => b.id === active.id)
+    const newIdx = cur.blocks.findIndex(b => b.id === over.id)
+    const reordered = arrayMove(cur.blocks, oldIdx, newIdx)
+    handleReorderBlocks(reordered)
+  }
+
+  function handleReorderChapters(reordered: Chapter[]) {
+    setChapters(reordered)
+    push(reordered)
   }
 
   async function save() {
@@ -318,31 +436,16 @@ export default function EditorMain() {
           {sidebarOpen && (
             <motion.aside initial={{width:0,opacity:0}} animate={{width:200,opacity:1}} exit={{width:0,opacity:0}} transition={{duration:0.18}}
               className="flex-shrink-0 bg-surface-1 border-r border-white/[0.06] flex flex-col overflow-hidden">
-              <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.04] flex-shrink-0">
-                <span className="text-[9px] font-mono text-ink-3 tracking-widest uppercase">Rozdzialy</span>
-                <button onClick={addChapter} className="block-action-btn"><Plus size={11}/></button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
-                {chapters.map((ch, i) => (
-                  <div key={ch.id} onClick={() => setActiveChapter(i)}
-                    className={"group/ch flex items-center gap-2 px-2.5 py-2 rounded-xl cursor-pointer transition-all " +
-                      (i === activeChapter ? 'bg-brand-blue/12 border border-brand-blue/20' : 'hover:bg-white/[0.04] border border-transparent')}>
-                    <input value={ch.emoji || 'P'} onChange={e => updateChapterEmoji(ch.id, e.target.value)}
-                      onClick={e => e.stopPropagation()}
-                      className="w-5 bg-transparent border-none outline-none text-sm text-center cursor-pointer flex-shrink-0" maxLength={2}/>
-                    <input value={ch.title} onChange={e => renameChapter(ch.id, e.target.value)} onClick={e => e.stopPropagation()}
-                      className="flex-1 bg-transparent border-none outline-none text-xs font-500 text-ink-2 min-w-0 cursor-pointer"/>
-                    <span className="text-[9px] font-mono text-ink-3 flex-shrink-0 group-hover/ch:hidden">{ch.blocks.length}</span>
-                    <button onClick={e => { e.stopPropagation(); removeChapter(ch.id) }}
-                      className="hidden group-hover/ch:flex text-ink-3 hover:text-red-400 p-0.5 flex-shrink-0"><Trash2 size={10}/></button>
-                  </div>
-                ))}
-              </div>
-              <div className="p-2 border-t border-white/[0.04] space-y-1 flex-shrink-0">
-                <div className="text-[9px] font-mono text-ink-3 px-2 mb-1.5">{chapters.length} rozdz. {totalBlocks} blokow</div>
-                <button onClick={() => setShowSettings(true)} className="w-full btn-ghost py-1.5 text-xs justify-start"><Settings2 size={11}/> Ustawienia</button>
-                <Link to="/reader/demo" className="w-full btn-ghost py-1.5 text-xs justify-start flex items-center gap-2"><BookOpen size={11}/> Widok czytelnika</Link>
-              </div>
+              <ChapterSidebar
+                chapters={chapters}
+                activeChapterIdx={activeChapter}
+                onSelectChapter={setActiveChapter}
+                onAddChapter={addChapter}
+                onRenameChapter={renameChapter}
+                onEmojiChange={updateChapterEmoji}
+                onDeleteChapter={removeChapter}
+                onReorderChapters={handleReorderChapters}
+              />
             </motion.aside>
           )}
         </AnimatePresence>
@@ -363,45 +466,30 @@ export default function EditorMain() {
                 </div>
               </div>
 
-              <AnimatePresence mode="popLayout">
-                {cur.blocks.map((block) => {
-                  const bm = BLOCK_META[block.type]
-                  const isSelected = selectedBlock === block.id
-                  return (
-                    <motion.div key={block.id} layout
-                      initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,scale:0.97,x:-10}}
-                      transition={{duration:0.15}}
-                      className={"relative group/block mb-3 rounded-2xl transition-all duration-150 " + (isSelected ? 'ring-1 ring-brand-blue/40' : '')}
-                      onClick={() => setSelectedBlock(block.id)}>
-                      <div className="absolute -top-2.5 left-3 z-20 opacity-0 group-hover/block:opacity-100 transition-opacity pointer-events-none">
-                        <span className="text-[9px] font-mono px-2 py-0.5 rounded-md bg-surface-0 border border-white/[0.08]" style={{color:bm?.color}}>
-                          {bm?.icon} {bm?.label}
-                        </span>
-                      </div>
-                      <div className="absolute right-2 top-2 z-20 flex gap-1 opacity-0 group-hover/block:opacity-100 transition-opacity">
-                        <button onClick={e=>{e.stopPropagation();moveBlock(block.id,-1)}} className="block-action-btn"><ChevronUp size={11}/></button>
-                        <button onClick={e=>{e.stopPropagation();moveBlock(block.id,1)}} className="block-action-btn"><ChevronDown size={11}/></button>
-                        <button onClick={e=>{e.stopPropagation();duplicateBlock(block.id)}} className="block-action-btn" title="Duplikuj">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                        </button>
-                        <button onClick={e=>{e.stopPropagation();removeBlock(block.id)}} className="block-action-btn hover:bg-red-500/20 hover:text-red-400"><Trash2 size={11}/></button>
-                      </div>
-                      <div className="absolute left-1 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover/block:opacity-100 transition-opacity cursor-grab text-ink-3">
-                        <GripVertical size={12}/>
-                      </div>
-                      <div className={['h1','h2','h3','paragraph','quote'].includes(block.type) ? 'px-6 py-3' : ''}>
-                        <BlockRenderer block={block} onChange={updateBlock} isSelected={isSelected}/>
-                      </div>
-                      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover/block:opacity-100 transition-opacity">
-                        <button onClick={e=>{e.stopPropagation();setShowPicker(true)}}
-                          className="w-6 h-6 rounded-full bg-surface-4 border border-white/[0.1] flex items-center justify-center text-ink-3 hover:text-brand-blue hover:border-brand-blue/30 hover:bg-brand-blue/10 transition-all shadow-sm">
-                          <Plus size={11}/>
-                        </button>
-                      </div>
-                    </motion.div>
-                  )
-                })}
-              </AnimatePresence>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndBlocks}>
+                <SortableContext items={cur.blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+                  <AnimatePresence mode="popLayout">
+                    {cur.blocks.map((block) => {
+                      const bm = BLOCK_META[block.type]
+                      const isSelected = selectedBlock === block.id
+                      return (
+                        <BlockItem
+                          key={block.id}
+                          block={block}
+                          bm={bm}
+                          isSelected={isSelected}
+                          setSelectedBlock={setSelectedBlock}
+                          moveBlock={moveBlock}
+                          duplicateBlock={duplicateBlock}
+                          removeBlock={removeBlock}
+                          updateBlock={updateBlock}
+                          setShowPicker={setShowPicker}
+                        />
+                      )
+                    })}
+                  </AnimatePresence>
+                </SortableContext>
+              </DndContext>
 
               {cur.blocks.length === 0 && (
                 <motion.div initial={{opacity:0}} animate={{opacity:1}} className="text-center py-24 text-ink-3">
@@ -447,7 +535,12 @@ export default function EditorMain() {
           {aiOpen && (
             <motion.aside initial={{width:0,opacity:0}} animate={{width:284,opacity:1}} exit={{width:0,opacity:0}} transition={{duration:0.18}}
               className="flex-shrink-0 bg-surface-1 border-l border-white/[0.06] overflow-hidden">
-              <AIStudio onInsertBlock={insertBlock} chapterContent={cur.blocks.map(b=>b.content).join(' ')}/>
+              <AIStudio 
+                onInsertBlock={insertBlock} 
+                onInsertBlocks={insertBlocks}
+                chapterContent={cur.blocks.map(b=>b.content).join(' ')}
+                currentChapterTitle={cur.title}
+              />
             </motion.aside>
           )}
         </AnimatePresence>

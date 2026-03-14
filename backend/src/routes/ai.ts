@@ -36,7 +36,7 @@ async function callGemini(system: string, user: string, maxTokens: number) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${GEMINI_API_KEY}`
   const r = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: 'application/json',
     body: JSON.stringify({
       contents: [
         {
@@ -168,12 +168,52 @@ router.post('/generate-interactive', async (req, res) => {
     res.status(500).json({ error: 'Błąd generowania narzędzia' })
   }
 })
+
+// ── /api/ai/generate-chapter ─────────────────────────────
+const ChapterGenSchema = z.object({
+  topic: z.string().min(3).max(500),
+  context: z.string().optional(),
+})
+
+const CHAPTER_SYSTEM = `Jesteś ekspertem od projektowania interaktywnych kursów (Webooków). 
+Twoim zadaniem jest wygenerowanie pełnej treści rozdziału w formacie strukturalnym, który łatwo sparsować.
+
+Używaj następujących tagów do oznaczania bloków:
+[H1] Tytuł
+[H2] Podtytuł
+[TEXT] Treść akapitu
+[CALLOUT] Ważna uwaga/wskazówka z emoji
+[QUIZ] Pytanie quizowe w formacie JSON: {"question":"...","options":[{"text":"...","isCorrect":true},...]}
+[CHECKLIST] Lista zadań w formacie JSON: {"items":["...","..."]}
+
+Przykład:
+[H1] Wstęp do AI
+[TEXT] Sztuczna inteligencja to...
+[CALLOUT] 💡 Pamiętaj o etyce!
+[QUIZ] {"question":"Co to jest ML?","options":[{"text":"Machine Learning","isCorrect":true},...]}
+
+Generuj bogatą, edukacyjną treść. Rozdział powinien mieć min. 5 bloków różnych typów.`
+
+router.post('/generate-chapter', async (req, res) => {
+  try {
+    const { topic, context } = ChapterGenSchema.parse(req.body)
+    const user = context 
+      ? `Temat rozdziału: ${topic}\nKontekst kursu: ${context}`
+      : `Temat rozdziału: ${topic}`
+    
+    const text = await callAIDispatch(CHAPTER_SYSTEM, user, 3000)
+    res.json({ result: text })
+  } catch (err) {
+    console.error('generate-chapter error:', err)
+    res.status(500).json({ error: 'Błąd generowania rozdziału' })
+  }
+})
+
 // ── /api/ai/translate ─────────────────────────────────────
 const TranslateSchema = z.object({
   blocks: z.array(z.object({ id: z.string(), type: z.string(), content: z.string() })),
   targetLanguage: z.enum(['en', 'de', 'fr', 'es', 'uk']),
 })
-
 
 const LANG_NAMES: Record<string, string> = { en:'angielski', de:'niemiecki', fr:'francuski', es:'hiszpański', uk:'ukraiński' }
 

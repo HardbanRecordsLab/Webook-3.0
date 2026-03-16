@@ -36,7 +36,9 @@ async function callGemini(system: string, user: string, maxTokens: number) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${GEMINI_API_KEY}`
   const r = await fetch(url, {
     method: 'POST',
-    headers: 'application/json',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
       contents: [
         {

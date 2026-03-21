@@ -55,11 +55,11 @@ export default function LandingPage() {
       <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-8 py-4
                       border-b border-white/[0.06] backdrop-blur-xl bg-surface-0/80">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <img src={logo} alt="Webook Studio" className="h-9 w-9 object-contain drop-shadow-lg
+          <img src="/logo.png" alt="Webook Studio" className="h-9 h-9 object-contain drop-shadow-lg
                 group-hover:scale-105 transition-transform duration-200" />
-          <div>
-            <span className="font-display font-800 text-lg tracking-tight text-ink">Webook Studio</span>
-            <span className="ml-2 text-xs font-mono text-brand-gold/80 font-500">4.0</span>
+          <div className="flex flex-col leading-none">
+            <span className="font-display font-800 text-lg tracking-tight text-ink">HRL Webook Studio</span>
+            <span className="text-[10px] font-mono text-brand-gold/80 font-500 uppercase tracking-widest">HardbanRecords Lab</span>
           </div>
         </Link>
 

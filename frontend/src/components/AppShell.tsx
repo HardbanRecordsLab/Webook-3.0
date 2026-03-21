@@ -34,7 +34,7 @@ export default function AppShell({ children, title, actions }: AppShellProps) {
       <aside className="w-56 flex-shrink-0 flex flex-col bg-surface-1 border-r border-white/[0.06]">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 px-5 py-5 border-b border-white/[0.06] group">
-          <img src={logo} alt="Webook Studio" className="h-8 w-8 object-contain group-hover:scale-105 transition-transform" />
+          <img src="/logo.png" alt="Webook Studio" className="h-8 w-8 object-contain group-hover:scale-105 transition-transform" />
           <div>
             <div className="font-display font-700 text-sm text-ink leading-tight">Webook Studio</div>
             <div className="text-[10px] font-mono text-brand-gold/60">4.0</div>

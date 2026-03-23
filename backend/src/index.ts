@@ -10,35 +10,39 @@ import webooksRouter from './routes/webooks_pg'
 import analyticsRouter from './routes/analytics_pg'
 
 const app = express()
-const PORT = Number(process.env.PORT) || 3001
+const PORT = Number(process.env.PORT) || 9108
 
 // ── Security ──────────────────────────────────────────────
 app.use(helmet())
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL || '*',
   credentials: true,
 }))
 
-// Raw body for Stripe webhooks (must be before json middleware)
-app.use('/api/payments/webhook', express.raw({ type: 'application/json' }))
+// ... (existing middleware)
 
-app.use(express.json({ limit: '10mb' }))
+app.get('/api/health', (_req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    service: 'webook-studio-3',
+    version: '4.0.0', 
+    ts: new Date().toISOString() 
+  })
+})
 
-// ── Rate limiting ─────────────────────────────────────────
-const generalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true })
-const aiLimiter = rateLimit({ windowMs: 60 * 1000, max: 15, message: { error: 'Zbyt wiele requestów AI. Odczekaj chwilę.' } })
+app.get('/api/auth', async (req, res) => {
+  const email = req.query.email as string
+  const ACCESS_MANAGER_URL = process.env.ACCESS_MANAGER_URL || 'http://hrl-webhook-hub-backend:9107'
+  if (!email) return res.status(400).json({ error: 'email required' })
 
-app.use('/api', generalLimiter)
-app.use('/api/ai', aiLimiter)
-
-// ── Routes ────────────────────────────────────────────────
-app.use('/api/ai', aiRouter)
-app.use('/api/payments', paymentsRouter)
-app.use('/api/webooks', webooksRouter)
-app.use('/api/analytics', analyticsRouter)
-
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', version: '4.0.0', ts: new Date().toISOString() })
+  try {
+    const response = await fetch(`${ACCESS_MANAGER_URL}/api/auth/profile?email=${email}`)
+    if (!response.ok) return res.status(response.status).json({ error: 'Auth Service Error' })
+    const data = await response.json()
+    res.json(data)
+  } catch (e) {
+    res.status(503).json({ error: 'Access Manager Connection Error' })
+  }
 })
 
 // ── 404 ───────────────────────────────────────────────────

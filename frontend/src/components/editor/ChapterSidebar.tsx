@@ -1,4 +1,3 @@
-import { Button } from "../AppShell"; // Assuming AppShell has generic buttons or similar UI
 import { Plus, BookOpen } from "lucide-react";
 import type { Chapter } from "../../lib/blocks";
 import {

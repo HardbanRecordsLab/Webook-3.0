@@ -8,6 +8,9 @@
       "source": "/api/:path*",
       "destination": "https://webook.hardbanrecordslab.online/api/:path*"
     },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

@@ -13,7 +13,7 @@ import { toast } from 'sonner'
 import type { Block } from '../../lib/blocks'
 import { createBlock } from '../../lib/blocks'
 
-const API_URL = 'http://localhost:3001/api/ai'
+const API_URL = '/api/ai'
 
 // ─────────────────────────────────────────────────────────────────
 //  TOOLS & CONSTANTS
